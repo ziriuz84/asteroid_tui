@@ -1,12 +1,12 @@
 [package]
-name = "asteroid_tui"
+name = "asteroid-tui"
 version = "0.1.0"
+authors = ["Sirio Negri <ziriuz84@gmail.com>"]
+license = "MIT"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-crossterm = "0.27.0"
-ratatui = "0.26.1"
-reqwest = "0.11.25"
-scraper = "0.19.0"
+crossterm = { version = "0.27.0", features = ["event-stream"] }
+futures = "0.3.30"
+ratatui = "0.26.0"
+tokio = { version = "1.35.1", features = ["full"] }
