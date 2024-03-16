@@ -6,8 +6,7 @@ use std::io;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 
-#[tokio::main]
-async fn main() -> AppResult<()> {
+fn main() -> AppResult<()> {
     // Create an application.
     let mut app = App::new();
 
@@ -23,7 +22,7 @@ async fn main() -> AppResult<()> {
         // Render the user interface.
         tui.draw(&mut app)?;
         // Handle events.
-        match tui.events.next().await? {
+        match tui.events.next()? {
             Event::Tick => app.tick(),
             Event::Key(key_event) => handle_key_events(key_event, &mut app)?,
             Event::Mouse(_) => {}
