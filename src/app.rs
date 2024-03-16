@@ -1,3 +1,4 @@
+use crate::settings::Settings;
 use std::error;
 
 /// Application result type.

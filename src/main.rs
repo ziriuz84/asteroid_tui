@@ -2,11 +2,13 @@ use asteroid_tui::app::{App, AppResult};
 use asteroid_tui::event::{Event, EventHandler};
 use asteroid_tui::handler::handle_key_events;
 use asteroid_tui::tui::Tui;
-use std::io;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
+use std::io;
 
 fn main() -> AppResult<()> {
+    println!("{:?}", dirs::config_local_dir());
+
     // Create an application.
     let mut app = App::new();
 
