@@ -15,3 +15,6 @@ pub mod handler;
 
 /// Settings Handler
 pub mod settings;
+
+/// Weather library
+pub mod weather;
