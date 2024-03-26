@@ -1,4 +1,20 @@
+use crate::settings::Settings;
+use reqwest;
 use std::collections::HashMap;
+
+#[derive(Debug)]
+struct Forecast {
+    time: String,
+    cloud_cover: String,
+    seeing: String,
+    transparency: String,
+    lifted_index: String,
+    temperature: String,
+    rh2m: String,
+    wind_direction: String,
+    wind10m: String,
+    precipitation: String,
+}
 
 fn get_cloud_cover_value(index: i8) -> Option<&'static str> {
     let cloud_cover = HashMap::from([
@@ -98,6 +114,22 @@ fn get_wind10m_value(index: i8) -> Option<&'static str> {
     wind10m.get(&index).cloned()
 }
 
+fn get_forecast() -> String {
+    let settings = Settings::new().unwrap();
+    let url: reqwest::Url = reqwest::Url::parse_with_params(
+        "http://www.7timer.info/bin/api.pl",
+        [
+            ("latitude", settings.get_latitude().to_string()),
+            ("longitude", settings.get_longitude().to_string()),
+            ("product", "astro".to_string()),
+            ("output", "json".to_string()),
+        ],
+    )
+    .unwrap();
+    let result = reqwest::blocking::get(url).unwrap().text();
+    result.unwrap()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -134,5 +166,10 @@ mod test {
         } else {
             assert!(panic!());
         }
+    }
+
+    #[test]
+    fn test_get_forecast() {
+        assert_eq!(get_forecast());
     }
 }
