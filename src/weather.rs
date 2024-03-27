@@ -119,8 +119,8 @@ fn get_forecast() -> String {
     let url: reqwest::Url = reqwest::Url::parse_with_params(
         "http://www.7timer.info/bin/api.pl",
         [
-            ("latitude", settings.get_latitude().to_string()),
-            ("longitude", settings.get_longitude().to_string()),
+            ("lat", settings.get_latitude().to_string()),
+            ("lon", settings.get_longitude().to_string()),
             ("product", "astro".to_string()),
             ("output", "json".to_string()),
         ],
@@ -170,6 +170,7 @@ mod test {
 
     #[test]
     fn test_get_forecast() {
-        assert_eq!(get_forecast());
+        println!("{}", get_forecast());
+        assert!(get_forecast().contains("astro"));
     }
 }
