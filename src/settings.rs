@@ -44,63 +44,63 @@ impl Settings {
     }
 
     /// Get lang value from settings
-    pub fn get_lang(&self) -> String {
-        self.general.lang
+    pub fn get_lang(&self) -> &String {
+        &self.general.lang
     }
 
     /// Get place value from settings
-    pub fn get_place(&self) -> String {
-        self.observatory.place
+    pub fn get_place(&self) -> &String {
+        &self.observatory.place
     }
 
     /// Get observatory name value from settings
-    pub fn get_observatory_name(&self) -> String {
-        self.observatory.observatory_name
+    pub fn get_observatory_name(&self) -> &String {
+        &self.observatory.observatory_name
     }
 
     /// Get observer name value from settings
-    pub fn get_observer_name(&self) -> String {
-        self.observatory.observer_name
+    pub fn get_observer_name(&self) -> &String {
+        &self.observatory.observer_name
     }
 
     /// Get mpc code value from settings
-    pub fn get_mpc_code(&self) -> String {
-        self.observatory.mpc_code
+    pub fn get_mpc_code(&self) -> &String {
+        &self.observatory.mpc_code
     }
 
     /// Get latitude value from settings
-    pub fn get_latitude(&self) -> f32 {
-        self.observatory.latitude
+    pub fn get_latitude(&self) -> &f32 {
+        &self.observatory.latitude
     }
 
     /// Get longitude value from settings
-    pub fn get_longitude(&self) -> f32 {
-        self.observatory.longitude
+    pub fn get_longitude(&self) -> &f32 {
+        &self.observatory.longitude
     }
 
     /// Get altitude value from settings
-    pub fn get_altitude(&self) -> f32 {
-        self.observatory.altitude
+    pub fn get_altitude(&self) -> &f32 {
+        &self.observatory.altitude
     }
 
     /// Get nord altitude value from settings
-    pub fn get_nord_altitude(&self) -> i32 {
-        self.observatory.nord_altitude
+    pub fn get_nord_altitude(&self) -> &i32 {
+        &self.observatory.nord_altitude
     }
 
     /// Get south altitude value from settings
-    pub fn get_south_altitude(&self) -> i32 {
-        self.observatory.south_altitude
+    pub fn get_south_altitude(&self) -> &i32 {
+        &self.observatory.south_altitude
     }
 
     /// Get east altitude value from settings
-    pub fn get_east_altitude(&self) -> i32 {
-        self.observatory.east_altitude
+    pub fn get_east_altitude(&self) -> &i32 {
+        &self.observatory.east_altitude
     }
 
     /// Get west altitude value from settings
-    pub fn get_west_altitude(&self) -> i32 {
-        self.observatory.west_altitude
+    pub fn get_west_altitude(&self) -> &i32 {
+        &self.observatory.west_altitude
     }
 }
 
