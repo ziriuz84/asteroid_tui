@@ -1,27 +1,38 @@
 use crate::settings::Settings;
 use reqwest;
+use serde::{Deserialize, Serialize};
+use serde_json::{Error, Result};
 use std::collections::HashMap;
 
-#[derive(Debug)]
-struct Forecast {
-    time: String,
-    cloud_cover: String,
-    seeing: String,
-    transparency: String,
-    lifted_index: String,
-    temperature: String,
-    rh2m: String,
-    wind_direction: String,
-    wind10m: String,
-    precipitation: String,
+#[derive(Debug, Deserialize)]
+struct Wind10m {
+    direction: String,
+    speed: i32,
 }
 
-struct ForecastResponse {
+#[derive(Debug, Deserialize)]
+struct Forecast {
+    timepoint: i8,
+    cloudcover: i8,
+    seeing: i8,
+    transparency: i8,
+    lifted_index: i8,
+    rh2m: i8,
+    wind10m: Wind10m,
+    temp2m: i8,
+    prec_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ForecastResponse {
     product: String,
     init: String,
-    datasets: Vec<Forecast>,
+    dataseries: Vec<Forecast>,
 }
 
+/// Returns a string with cloud cover percentage
+///
+/// * `index`: the index from json response
 fn get_cloud_cover_value(index: i8) -> Option<&'static str> {
     let cloud_cover = HashMap::from([
         (1, "0%-6%"),
@@ -37,6 +48,9 @@ fn get_cloud_cover_value(index: i8) -> Option<&'static str> {
     cloud_cover.get(&index).cloned()
 }
 
+/// Returns a string with seeing index
+///
+/// * `index`: the index from json response
 fn get_seeing_value(index: i8) -> Option<&'static str> {
     let seeing = HashMap::from([
         (1, "<0.5\""),
@@ -51,6 +65,9 @@ fn get_seeing_value(index: i8) -> Option<&'static str> {
     seeing.get(&index).cloned()
 }
 
+/// Returns a string with transparency values
+///
+/// * `index`: the index from json response
 fn get_transparency_value(index: i8) -> Option<&'static str> {
     let transparency = HashMap::from([
         (1, "<0.3"),
@@ -65,6 +82,9 @@ fn get_transparency_value(index: i8) -> Option<&'static str> {
     transparency.get(&index).cloned()
 }
 
+/// Returns a string with lifted index
+///
+/// * `index`: the index from json response
 fn get_lifted_index_value(index: i8) -> Option<&'static str> {
     let lifted_index = HashMap::from([
         (-10, "Below -7"),
@@ -79,6 +99,9 @@ fn get_lifted_index_value(index: i8) -> Option<&'static str> {
     lifted_index.get(&index).cloned()
 }
 
+/// Returns a string with rh range
+///
+/// * `index`: the index from json response
 fn get_rh2m_value(index: i8) -> Option<&'static str> {
     let rh2m = HashMap::from([
         (-4, "0%-5%"),
@@ -106,6 +129,9 @@ fn get_rh2m_value(index: i8) -> Option<&'static str> {
     rh2m.get(&index).cloned()
 }
 
+/// Returns a string with wind velocity
+///
+/// * `index`: the index from json response
 fn get_wind10m_value(index: i8) -> Option<&'static str> {
     let wind10m = HashMap::from([
         (1, "Below 0.3 m/s"),
@@ -120,6 +146,7 @@ fn get_wind10m_value(index: i8) -> Option<&'static str> {
     wind10m.get(&index).cloned()
 }
 
+/// Returns the string with full response
 fn get_forecast() -> String {
     let settings = Settings::new().unwrap();
     let url: reqwest::Url = reqwest::Url::parse_with_params(
@@ -134,6 +161,12 @@ fn get_forecast() -> String {
     .unwrap();
     let result = reqwest::blocking::get(url).unwrap().text();
     result.unwrap()
+}
+
+/// Returns the ForecastResponse struct with data
+pub fn prepare_data() -> Result<ForecastResponse> {
+    let response: String = get_forecast();
+    serde_json::from_str(&response)
 }
 
 #[cfg(test)]
@@ -178,5 +211,12 @@ mod test {
     fn test_get_forecast() {
         println!("{}", get_forecast());
         assert!(get_forecast().contains("astro"));
+    }
+
+    #[test]
+    fn test_prepare_data() {
+        let data = prepare_data().unwrap();
+        println!("{:?}", data);
+        assert_eq!(data.product, "astro");
     }
 }
