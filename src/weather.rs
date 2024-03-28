@@ -16,6 +16,12 @@ struct Forecast {
     precipitation: String,
 }
 
+struct ForecastResponse {
+    product: String,
+    init: String,
+    datasets: Vec<Forecast>,
+}
+
 fn get_cloud_cover_value(index: i8) -> Option<&'static str> {
     let cloud_cover = HashMap::from([
         (1, "0%-6%"),
