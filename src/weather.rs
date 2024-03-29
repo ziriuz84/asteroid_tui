@@ -2,7 +2,10 @@ use crate::settings::Settings;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{Error, Result};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
 
 #[derive(Debug, Deserialize)]
 struct Wind10m {
@@ -13,7 +16,8 @@ struct Wind10m {
 #[derive(Debug, Deserialize)]
 struct Forecast {
     timepoint: i8,
-    cloudcover: i8,
+    #[serde(rename = "cloudcover")]
+    cloud_cover: CloudCover,
     seeing: i8,
     transparency: i8,
     lifted_index: i8,
@@ -28,6 +32,42 @@ pub struct ForecastResponse {
     product: String,
     init: String,
     dataseries: Vec<Forecast>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(u8)]
+pub enum CloudCover {
+    Six = 1,
+    Nineteen = 2,
+    ThirtyOne = 3,
+    FourtyFour = 4,
+    FiftyFive = 5,
+    SixtyNine = 6,
+    EightyOne = 7,
+    NinetyFour = 8,
+    OneHundred = 9,
+}
+
+impl CloudCover {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            CloudCover::Six => "0%-6%",
+            CloudCover::Nineteen => "6%-19%",
+            CloudCover::ThirtyOne => "19%-31%",
+            CloudCover::FourtyFour => "31%-44%",
+            CloudCover::FiftyFive => "44%-56%",
+            CloudCover::SixtyNine => "56%-69%",
+            CloudCover::EightyOne => "69%-81%",
+            CloudCover::NinetyFour => "81%-94%",
+            CloudCover::OneHundred => "94%-100%",
+        }
+    }
+}
+
+impl Display for CloudCover {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
 }
 
 /// Returns a string with cloud cover percentage
