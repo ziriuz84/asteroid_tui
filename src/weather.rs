@@ -18,7 +18,7 @@ struct Forecast {
     timepoint: i8,
     #[serde(rename = "cloudcover")]
     cloud_cover: CloudCover,
-    seeing: i8,
+    seeing: Seeing,
     transparency: i8,
     lifted_index: i8,
     rh2m: i8,
@@ -70,39 +70,38 @@ impl Display for CloudCover {
     }
 }
 
-/// Returns a string with cloud cover percentage
-///
-/// * `index`: the index from json response
-fn get_cloud_cover_value(index: i8) -> Option<&'static str> {
-    let cloud_cover = HashMap::from([
-        (1, "0%-6%"),
-        (2, "6%-19%"),
-        (3, "19%-31%"),
-        (4, "31%-44%"),
-        (5, "44%-56%"),
-        (6, "56%-69%"),
-        (7, "69%-81%"),
-        (8, "81%-94%"),
-        (9, "94%-100%"),
-    ]);
-    cloud_cover.get(&index).cloned()
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(u8)]
+pub enum Seeing {
+    ZeroFive = 1,
+    ZeroSeven = 2,
+    One = 3,
+    OneTwo = 4,
+    OneFive = 5,
+    Two = 6,
+    TwoFive = 7,
+    MoreTwoFive = 8,
 }
 
-/// Returns a string with seeing index
-///
-/// * `index`: the index from json response
-fn get_seeing_value(index: i8) -> Option<&'static str> {
-    let seeing = HashMap::from([
-        (1, "<0.5\""),
-        (2, "0.5\"-0.75\""),
-        (3, "0.75\"-1\""),
-        (4, "1\"-1.25\""),
-        (5, "1.25\"-1.5\""),
-        (6, "1.5\"-2\""),
-        (7, "2\"-2.5\""),
-        (8, ">2.5\""),
-    ]);
-    seeing.get(&index).cloned()
+impl Seeing {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            Seeing::ZeroFive => "<0.5\"",
+            Seeing::ZeroSeven => "0.5\"-0.75\"",
+            Seeing::One => "0.75\"-1\"",
+            Seeing::OneTwo => "1\"-1.25\"",
+            Seeing::OneFive => "1.25\"-1.5\"",
+            Seeing::Two => "1.5\"-2\"",
+            Seeing::TwoFive => "2\"-2.5\"",
+            Seeing::MoreTwoFive => ">2.5\"",
+        }
+    }
+}
+
+impl Display for Seeing {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
 }
 
 /// Returns a string with transparency values
@@ -215,16 +214,6 @@ mod test {
 
     #[test]
     fn test_get_dict_values() {
-        if let Some(test) = get_cloud_cover_value(3) {
-            assert_eq!(test, "19%-31%");
-        } else {
-            assert!(panic!());
-        }
-        if let Some(test) = get_seeing_value(3) {
-            assert_eq!(test, "0.75\"-1\"");
-        } else {
-            assert!(panic!());
-        }
         if let Some(test) = get_transparency_value(3) {
             assert_eq!(test, "0.4-0.5");
         } else {
