@@ -44,75 +44,63 @@ impl Settings {
     }
 
     /// Get lang value from settings
-    pub fn get_lang() -> String {
-        let s = Settings::new().unwrap();
-        s.general.lang
+    pub fn get_lang(&self) -> &String {
+        &self.general.lang
     }
 
     /// Get place value from settings
-    pub fn get_place() -> String {
-        let s = Settings::new().unwrap();
-        s.observatory.place
+    pub fn get_place(&self) -> &String {
+        &self.observatory.place
     }
 
     /// Get observatory name value from settings
-    pub fn get_observatory_name() -> String {
-        let s = Settings::new().unwrap();
-        s.observatory.observatory_name
+    pub fn get_observatory_name(&self) -> &String {
+        &self.observatory.observatory_name
     }
 
     /// Get observer name value from settings
-    pub fn get_observer_name() -> String {
-        let s = Settings::new().unwrap();
-        s.observatory.observer_name
+    pub fn get_observer_name(&self) -> &String {
+        &self.observatory.observer_name
     }
 
     /// Get mpc code value from settings
-    pub fn get_mpc_code() -> String {
-        let s = Settings::new().unwrap();
-        s.observatory.mpc_code
+    pub fn get_mpc_code(&self) -> &String {
+        &self.observatory.mpc_code
     }
 
     /// Get latitude value from settings
-    pub fn get_latitude() -> f32 {
-        let s = Settings::new().unwrap();
-        s.observatory.latitude
+    pub fn get_latitude(&self) -> &f32 {
+        &self.observatory.latitude
     }
 
     /// Get longitude value from settings
-    pub fn get_longitude() -> f32 {
-        let s = Settings::new().unwrap();
-        s.observatory.longitude
+    pub fn get_longitude(&self) -> &f32 {
+        &self.observatory.longitude
     }
 
     /// Get altitude value from settings
-    pub fn get_altitude() -> f32 {
-        let s = Settings::new().unwrap();
-        s.observatory.altitude
+    pub fn get_altitude(&self) -> &f32 {
+        &self.observatory.altitude
     }
 
     /// Get nord altitude value from settings
-    pub fn get_nord_altitude() -> i32 {
-        let s = Settings::new().unwrap();
-        s.observatory.nord_altitude
+    pub fn get_nord_altitude(&self) -> &i32 {
+        &self.observatory.nord_altitude
     }
 
     /// Get south altitude value from settings
-    pub fn get_south_altitude() -> i32 {
-        let s = Settings::new().unwrap();
-        s.observatory.south_altitude
+    pub fn get_south_altitude(&self) -> &i32 {
+        &self.observatory.south_altitude
     }
 
     /// Get east altitude value from settings
-    pub fn get_east_altitude() -> i32 {
-        let s = Settings::new().unwrap();
-        s.observatory.east_altitude
+    pub fn get_east_altitude(&self) -> &i32 {
+        &self.observatory.east_altitude
     }
 
     /// Get west altitude value from settings
-    pub fn get_west_altitude() -> i32 {
-        let s = Settings::new().unwrap();
-        s.observatory.west_altitude
+    pub fn get_west_altitude(&self) -> &i32 {
+        &self.observatory.west_altitude
     }
 }
 
@@ -128,17 +116,18 @@ mod test {
 
     #[test]
     fn test_get_values() {
-        assert!(Settings::get_lang().is_ascii());
-        assert!(Settings::get_place().is_ascii());
-        assert!(Settings::get_observatory_name().is_ascii());
-        assert!(Settings::get_observer_name().is_ascii());
-        assert!(Settings::get_mpc_code().is_ascii());
-        assert!(Settings::get_latitude().is_finite());
-        assert!(Settings::get_longitude().is_finite());
-        assert!(Settings::get_altitude().is_finite());
-        assert!(Settings::get_nord_altitude().is_positive());
-        assert!(Settings::get_south_altitude().is_positive());
-        assert!(Settings::get_east_altitude().is_positive());
-        assert!(Settings::get_west_altitude().is_positive());
+        let s = Settings::new().unwrap();
+        assert!(s.get_lang().is_ascii());
+        assert!(s.get_place().is_ascii());
+        assert!(s.get_observatory_name().is_ascii());
+        assert!(s.get_observer_name().is_ascii());
+        assert!(s.get_mpc_code().is_ascii());
+        assert!(s.get_latitude().is_finite());
+        assert!(s.get_longitude().is_finite());
+        assert!(s.get_altitude().is_finite());
+        assert!(s.get_nord_altitude().is_positive());
+        assert!(s.get_south_altitude().is_positive());
+        assert!(s.get_east_altitude().is_positive());
+        assert!(s.get_west_altitude().is_positive());
     }
 }
