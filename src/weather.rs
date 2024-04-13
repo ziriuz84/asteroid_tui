@@ -10,7 +10,7 @@ use std::fmt::Display;
 #[derive(Debug, Deserialize)]
 struct Wind10m {
     direction: String,
-    speed: i32,
+    speed: Wind10mVelocity,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,7 +19,7 @@ struct Forecast {
     #[serde(rename = "cloudcover")]
     cloud_cover: CloudCover,
     seeing: Seeing,
-    transparency: i8,
+    transparency: Transparency,
     lifted_index: i8,
     rh2m: i8,
     wind10m: Wind10m,
@@ -104,21 +104,72 @@ impl Display for Seeing {
     }
 }
 
-/// Returns a string with transparency values
-///
-/// * `index`: the index from json response
-fn get_transparency_value(index: i8) -> Option<&'static str> {
-    let transparency = HashMap::from([
-        (1, "<0.3"),
-        (2, "0.3-0.4"),
-        (3, "0.4-0.5"),
-        (4, "0.5-0.6"),
-        (5, "0.6-0.7"),
-        (6, "0.7-0.85"),
-        (7, "0.85-1"),
-        (8, ">1"),
-    ]);
-    transparency.get(&index).cloned()
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(u8)]
+pub enum Transparency {
+    ZeroThree = 1,
+    ZeroFour = 2,
+    ZeroFive = 3,
+    ZeroSix = 4,
+    ZeroSeven = 5,
+    ZeroEight = 6,
+    One = 7,
+    MoreOne = 8,
+}
+
+impl Transparency {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            Transparency::ZeroThree => "<0.3",
+            Transparency::ZeroFour => "0.3-0.4",
+            Transparency::ZeroFive => "0.4-0.5",
+            Transparency::ZeroSix => "0.5-0.6",
+            Transparency::ZeroSeven => "0.6-0.7",
+            Transparency::ZeroEight => "0.7-0.85",
+            Transparency::One => "0.85-1",
+            Transparency::MoreOne => ">1",
+        }
+    }
+}
+
+impl Display for Transparency {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(u8)]
+pub enum LiftedIndex {
+    ZeroThree = 1,
+    ZeroFour = 2,
+    ZeroFive = 3,
+    ZeroSix = 4,
+    ZeroSeven = 5,
+    ZeroEight = 6,
+    One = 7,
+    MoreOne = 8,
+}
+
+impl LiftedIndex {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            LiftedIndex::ZeroThree => "<0.3",
+            LiftedIndex::ZeroFour => "0.3-0.4",
+            LiftedIndex::ZeroFive => "0.4-0.5",
+            LiftedIndex::ZeroSix => "0.5-0.6",
+            LiftedIndex::ZeroSeven => "0.6-0.7",
+            LiftedIndex::ZeroEight => "0.7-0.85",
+            LiftedIndex::One => "0.85-1",
+            LiftedIndex::MoreOne => ">1",
+        }
+    }
+}
+
+impl Display for LiftedIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
 }
 
 /// Returns a string with lifted index
@@ -168,21 +219,38 @@ fn get_rh2m_value(index: i8) -> Option<&'static str> {
     rh2m.get(&index).cloned()
 }
 
-/// Returns a string with wind velocity
-///
-/// * `index`: the index from json response
-fn get_wind10m_value(index: i8) -> Option<&'static str> {
-    let wind10m = HashMap::from([
-        (1, "Below 0.3 m/s"),
-        (2, "0.3-3.4m/s"),
-        (3, "3.4-8.0m/s"),
-        (4, "8.0-10.8m/s"),
-        (5, "10.8-17.2m/s"),
-        (6, "17.2-24.5m/s"),
-        (7, "24.5-32.6m/s"),
-        (8, "Over 32.6m/s"),
-    ]);
-    wind10m.get(&index).cloned()
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(u8)]
+pub enum Wind10mVelocity {
+    BelowZeroThree = 1,
+    Three = 2,
+    Eight = 3,
+    Ten = 4,
+    Seventeen = 5,
+    TwentyFour = 6,
+    ThirtyTwo = 7,
+    OverThirtyTwo = 8,
+}
+
+impl Wind10mVelocity {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            Wind10mVelocity::BelowZeroThree => "Below 0.3 m/s",
+            Wind10mVelocity::Three => "0.3-3.4 m/s",
+            Wind10mVelocity::Eight => "3.4-8.0 m/s",
+            Wind10mVelocity::Ten => "8.0-10.8 m/s",
+            Wind10mVelocity::Seventeen => "10.8-17.2 m/s",
+            Wind10mVelocity::TwentyFour => "17.2-24.5 m/s",
+            Wind10mVelocity::ThirtyTwo => "24.5-32.6 m/s",
+            Wind10mVelocity::OverThirtyTwo => "Over 32.6 m/s",
+        }
+    }
+}
+
+impl Display for Wind10mVelocity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
 }
 
 /// Returns the string with full response
@@ -214,11 +282,6 @@ mod test {
 
     #[test]
     fn test_get_dict_values() {
-        if let Some(test) = get_transparency_value(3) {
-            assert_eq!(test, "0.4-0.5");
-        } else {
-            assert!(panic!());
-        }
         if let Some(test) = get_lifted_index_value(2) {
             assert_eq!(test, "0 - 4");
         } else {
@@ -226,11 +289,6 @@ mod test {
         }
         if let Some(test) = get_rh2m_value(2) {
             assert_eq!(test, "30%-35%");
-        } else {
-            assert!(panic!());
-        }
-        if let Some(test) = get_wind10m_value(3) {
-            assert_eq!(test, "3.4-8.0m/s");
         } else {
             assert!(panic!());
         }
