@@ -6,6 +6,7 @@ use ratatui::{
 };
 
 use crate::app::App;
+use crate::app::CurrentScreen;
 
 /// Renders the user interface widgets.
 pub fn render(app: &mut App, frame: &mut Frame) {
@@ -13,6 +14,20 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     // See the following resources:
     // - https://docs.rs/ratatui/latest/ratatui/widgets/index.html
     // - https://github.com/ratatui-org/ratatui/tree/master/examples
+    match app.current_screen {
+        CurrentScreen::MainMenu => {
+            render_main_menu(app, frame);
+        }
+        CurrentScreen::SchedulingMenu => {
+            render_scheduling_menu(app, frame);
+        }
+        CurrentScreen::WeatherForecast => {
+            render_weather_forecast(app, frame);
+        }
+    }
+}
+
+fn render_main_menu(app: &mut App, frame: &mut Frame) {
     frame.render_widget(
         Paragraph::new(format!(
             "This is a tui template.\n\
@@ -32,3 +47,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         frame.size(),
     )
 }
+
+fn render_scheduling_menu(app: &mut App, frame: &mut Frame) {}
+
+fn render_weather_forecast(app: &mut App, frame: &mut Frame) {}
