@@ -4,6 +4,13 @@ use std::error;
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
+#[derive(Debug)]
+pub enum CurrentScreen {
+    MainMenu,
+    SchedulingMenu,
+    WeatherForecast,
+}
+
 /// Application.
 #[derive(Debug)]
 pub struct App {
@@ -11,6 +18,7 @@ pub struct App {
     pub running: bool,
     /// counter
     pub counter: u8,
+    pub current_screen: CurrentScreen,
 }
 
 impl Default for App {
@@ -18,6 +26,7 @@ impl Default for App {
         Self {
             running: true,
             counter: 0,
+            current_screen: CurrentScreen::MainMenu,
         }
     }
 }
