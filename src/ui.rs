@@ -1,14 +1,18 @@
 use ratatui::{
     layout::Alignment,
     style::{Color, Style},
-    widgets::{Block, BorderType, Paragraph},
+    widgets::{Block, BorderType, Cell, Paragraph, Row, Table},
     Frame,
 };
+use serde::{Deserialize, Serialize};
+use serde_json::{Error, Result};
 
 use ratatui::prelude::*;
 
 use crate::app::App;
 use crate::app::CurrentScreen;
+use crate::weather::prepare_data;
+use crate::weather::ForecastResponse;
 
 /// Renders the user interface widgets.
 pub fn render(app: &mut App, frame: &mut Frame) {
@@ -33,7 +37,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             render_scheduling_menu(app, frame, layout);
         }
         CurrentScreen::WeatherForecast => {
-            render_weather_forecast(app, frame);
+            render_weather_forecast(app, frame, layout);
         }
     }
 }
@@ -151,4 +155,92 @@ fn render_scheduling_menu(
     );
 }
 
-fn render_weather_forecast(app: &mut App, frame: &mut Frame) {}
+fn create_table(data: &ForecastResponse) -> Table {
+    // Create the table header
+    let header = vec![
+        "Timepoint",
+        "Cloud Cover",
+        "Seeing",
+        "Transparency",
+        "Lifted Index",
+        "RH2m",
+        "Wind10m",
+        "Temp2m",
+        "Prec Type",
+    ]
+    .into_iter()
+    .map(Cell::from)
+    .collect::<Row>()
+    .style(Style::default().add_modifier(Modifier::BOLD));
+
+    // Create table rows
+    let rows = data
+        .dataseries
+        .iter()
+        .map(|forecast| {
+            Row::new(vec![
+                Cell::from(forecast.timepoint.to_string()),
+                Cell::from(forecast.cloud_cover.to_string()), // Assuming CloudCover, Seeing, Transparency, Wind10m have a to_string() method
+                Cell::from(forecast.seeing.to_string()),
+                Cell::from(forecast.transparency.to_string()),
+                Cell::from(forecast.lifted_index.to_string()),
+                Cell::from(forecast.rh2m.to_string()),
+                Cell::from(forecast.wind10m.direction.to_string()),
+                Cell::from(forecast.wind10m.speed.to_string()),
+                Cell::from(forecast.temp2m.to_string()),
+                Cell::from(forecast.prec_type.clone()),
+            ])
+        })
+        .collect::<Vec<Row>>();
+    let widths = [
+        Constraint::Percentage(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(15),
+        Constraint::Percentage(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(10),
+        Constraint::Percentage(15),
+        Constraint::Percentage(10),
+        Constraint::Percentage(15),
+    ];
+
+    // Configure the table
+    Table::new(rows, widths).header(header)
+}
+
+fn render_weather_forecast(
+    app: &mut App,
+    frame: &mut Frame,
+    layout: std::rc::Rc<[ratatui::layout::Rect]>,
+) {
+    let data: ForecastResponse = prepare_data().unwrap();
+    println!("{:?}", data);
+
+    frame.render_widget(
+        Paragraph::new("AsteroidTUI")
+            .block(
+                Block::bordered()
+                    //.title("Template")
+                    //.title_alignment(Alignment::Center)
+                    .border_type(BorderType::Rounded),
+            )
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[0],
+    );
+    frame.render_widget(
+        Paragraph::new("")
+            .block(Block::default())
+            .style(Style::default().bg(Color::Black)),
+        layout[1],
+    );
+    frame.render_widget(create_table(&data), layout[2]);
+    frame.render_widget(
+        Paragraph::new("Press q or Ctrl+C to quit")
+            .block(Block::bordered().border_type(BorderType::Rounded))
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[3],
+    );
+}
