@@ -215,7 +215,6 @@ fn render_weather_forecast(
     layout: std::rc::Rc<[ratatui::layout::Rect]>,
 ) {
     let data: ForecastResponse = prepare_data().unwrap();
-    println!("{:?}", data);
 
     frame.render_widget(
         Paragraph::new("AsteroidTUI")

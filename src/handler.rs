@@ -23,6 +23,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             CurrentScreen::WeatherForecast => app.current_screen = CurrentScreen::SchedulingMenu,
             _ => {}
         },
+        KeyCode::Char('w') | KeyCode::Char('W') => match app.current_screen {
+            CurrentScreen::SchedulingMenu => app.current_screen = CurrentScreen::WeatherForecast,
+            _ => {}
+        },
         // Counter handlers
         KeyCode::Right => {
             app.increment_counter();
