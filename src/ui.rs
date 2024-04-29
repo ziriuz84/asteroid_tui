@@ -214,8 +214,18 @@ fn render_weather_forecast(
     frame: &mut Frame,
     layout: std::rc::Rc<[ratatui::layout::Rect]>,
 ) {
-    let data: ForecastResponse = prepare_data().unwrap();
-
+    let header = Row::new(vec![
+        Cell::from("Time"),
+        Cell::from("Cloud Cover"),
+        Cell::from("Seeing"),
+        Cell::from("Transparency"),
+        Cell::from("Lifted Index"),
+        Cell::from("RH (2m)"),
+        Cell::from("Wind Dir (10m)"),
+        Cell::from("Wind Speed (10m)"),
+        Cell::from("Temp (2m)"),
+        Cell::from("Prec Type"),
+    ]);
     frame.render_widget(
         Paragraph::new("AsteroidTUI")
             .block(
@@ -234,7 +244,12 @@ fn render_weather_forecast(
             .style(Style::default().bg(Color::Black)),
         layout[1],
     );
-    frame.render_widget(create_table(&data), layout[2]);
+    frame.render_widget(
+        create_table(&app.weather_requested)
+            .header(header)
+            .style(Style::default().bg(Color::Black).fg(Color::Red)),
+        layout[2],
+    );
     frame.render_widget(
         Paragraph::new("Press q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))

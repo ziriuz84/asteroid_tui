@@ -20,7 +20,7 @@ pub struct Forecast {
     pub cloud_cover: CloudCover,
     pub seeing: Seeing,
     pub transparency: Transparency,
-    pub lifted_index: i8,
+    pub lifted_index: LiftedIndex,
     pub rh2m: i8,
     pub wind10m: Wind10m,
     pub temp2m: i8,
@@ -139,29 +139,29 @@ impl Display for Transparency {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
-#[repr(u8)]
+#[repr(i8)]
 pub enum LiftedIndex {
-    ZeroThree = 1,
+    BelowSeven = -10,
+    SevenFive = -6,
+    FiveThree = -4,
+    ThreeZero = -1,
     ZeroFour = 2,
-    ZeroFive = 3,
-    ZeroSix = 4,
-    ZeroSeven = 5,
-    ZeroEight = 6,
-    One = 7,
-    MoreOne = 8,
+    FourEight = 6,
+    EightEleven = 10,
+    OverEleven = 15,
 }
 
 impl LiftedIndex {
     pub const fn to_str(self) -> &'static str {
         match self {
-            LiftedIndex::ZeroThree => "<0.3",
-            LiftedIndex::ZeroFour => "0.3-0.4",
-            LiftedIndex::ZeroFive => "0.4-0.5",
-            LiftedIndex::ZeroSix => "0.5-0.6",
-            LiftedIndex::ZeroSeven => "0.6-0.7",
-            LiftedIndex::ZeroEight => "0.7-0.85",
-            LiftedIndex::One => "0.85-1",
-            LiftedIndex::MoreOne => ">1",
+            LiftedIndex::BelowSeven => "Below -7",
+            LiftedIndex::SevenFive => "-7 - -5",
+            LiftedIndex::FiveThree => "-5 - -3",
+            LiftedIndex::ThreeZero => "-3 - 0",
+            LiftedIndex::ZeroFour => "0 - 4",
+            LiftedIndex::FourEight => "4 - 8",
+            LiftedIndex::EightEleven => "8 - 11",
+            LiftedIndex::OverEleven => "Over 11",
         }
     }
 }
@@ -175,7 +175,7 @@ impl Display for LiftedIndex {
 /// Returns a string with lifted index
 ///
 /// * `index`: the index from json response
-fn get_lifted_index_value(index: i8) -> Option<&'static str> {
+pub fn get_lifted_index_value(index: i8) -> Option<&'static str> {
     let lifted_index = HashMap::from([
         (-10, "Below -7"),
         (-6, "-7 - -5"),
@@ -192,7 +192,7 @@ fn get_lifted_index_value(index: i8) -> Option<&'static str> {
 /// Returns a string with rh range
 ///
 /// * `index`: the index from json response
-fn get_rh2m_value(index: i8) -> Option<&'static str> {
+pub fn get_rh2m_value(index: i8) -> Option<&'static str> {
     let rh2m = HashMap::from([
         (-4, "0%-5%"),
         (-3, "5%-10%"),
