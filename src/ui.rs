@@ -16,6 +16,9 @@ use crate::weather::prepare_data;
 use crate::weather::ForecastResponse;
 
 /// Renders the user interface widgets.
+///
+/// * `app`: app state struct
+/// * `frame`: frame to work in
 pub fn render(app: &mut App, frame: &mut Frame) {
     // This is where you add new widgets.
     // See the following resources:
@@ -68,6 +71,11 @@ fn centered_rect(r: Rect, percent_x: u16, percent_y: u16) -> Rect {
         .split(popup_layout[1])[1]
 }
 
+/// Renders main menu
+///
+/// * `app`: app state struct
+/// * `frame`: frame to work in
+/// * `layout`: layout
 fn render_main_menu(
     app: &mut App,
     frame: &mut Frame,
@@ -112,6 +120,11 @@ fn render_main_menu(
     );
 }
 
+/// Renders scheduling menu
+///
+/// * `app`: app state struct
+/// * `frame`: frame to work in
+/// * `layout`: layout
 fn render_scheduling_menu(
     app: &mut App,
     frame: &mut Frame,
@@ -156,6 +169,10 @@ fn render_scheduling_menu(
     );
 }
 
+/// Calculates and formats weather time
+///
+/// * `time_init`: time start as YYYYMMDDHHMM
+/// * `delta_t`: duration to calculate
 fn weather_time(time_init: &str, delta_t: i8) -> String {
     // Parse the initial time string into a NaiveDateTime
     let time_start: NaiveDateTime =
@@ -168,7 +185,10 @@ fn weather_time(time_init: &str, delta_t: i8) -> String {
     time.format("%d/%m %H:%M").to_string()
 }
 
-fn create_table(data: &ForecastResponse) -> Table {
+/// Creates a table widget for weather data
+///
+/// * `data`: ForecastResponse Data from 7timer
+fn create_weather_table(data: &ForecastResponse) -> Table {
     // Create the table header
     let header = vec![
         "Timepoint",
@@ -225,6 +245,11 @@ fn create_table(data: &ForecastResponse) -> Table {
     Table::new(rows, widths).header(header)
 }
 
+/// Renders weather forecast
+///
+/// * `app`: app state struct
+/// * `frame`: frame to work in
+/// * `layout`: layout
 fn render_weather_forecast(
     app: &mut App,
     frame: &mut Frame,
@@ -261,7 +286,7 @@ fn render_weather_forecast(
         layout[1],
     );
     frame.render_widget(
-        create_table(&app.weather_requested)
+        create_weather_table(&app.weather_requested)
             .header(header)
             .style(Style::default().bg(Color::Black).fg(Color::Red)),
         layout[2],
