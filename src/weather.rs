@@ -21,7 +21,7 @@ pub struct Forecast {
     pub seeing: Seeing,
     pub transparency: Transparency,
     pub lifted_index: LiftedIndex,
-    pub rh2m: i8,
+    pub rh2m: RH2m,
     pub wind10m: Wind10m,
     pub temp2m: i8,
     pub prec_type: String,
@@ -30,7 +30,7 @@ pub struct Forecast {
 #[derive(Debug, Deserialize)]
 pub struct ForecastResponse {
     product: String,
-    init: String,
+    pub init: String,
     pub dataseries: Vec<Forecast>,
 }
 
@@ -218,6 +218,65 @@ pub fn get_rh2m_value(index: i8) -> Option<&'static str> {
     ]);
     rh2m.get(&index).cloned()
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[repr(i8)]
+pub enum RH2m {
+    ZeroFive = -4,
+    FiveTen = -3,
+    TenFifteen = -2,
+    FifteenTwenty = -1,
+    TwentyTwentyFive = 0,
+    TwentyFiveThirty = 1,
+    ThirtyThirtyFive = 2,
+    ThirtyFiveForty = 3,
+    FortyFortyFive = 4,
+    FortyFiveFifty = 5,
+    FiftyFiftyFive = 6,
+    FiftyFiveSixty = 7,
+    SixtySixtyFive = 8,
+    SixtyFiveSeventy = 9,
+    SeventySeventyFive = 10,
+    SeventyFiveEighty = 11,
+    EightyEightyFive = 12,
+    EightyFiveNinety = 13,
+    NinetyNinetyFive = 14,
+    NinetyFiveNinetyNine = 15,
+    NinetyNineHundred = 16,
+}
+
+impl RH2m {
+    pub const fn to_str(self) -> &'static str {
+        match self {
+            RH2m::ZeroFive => "0%-5%",
+            RH2m::FiveTen => "5%-10%",
+            RH2m::TenFifteen => "10%-15%",
+            RH2m::FifteenTwenty => "15%-20%",
+            RH2m::TwentyTwentyFive => "20%-25%",
+            RH2m::TwentyFiveThirty => "25%-30%",
+            RH2m::ThirtyThirtyFive => "30%-35%",
+            RH2m::ThirtyFiveForty => "35%-40%",
+            RH2m::FortyFortyFive => "40%-45%",
+            RH2m::FortyFiveFifty => "45%-50%",
+            RH2m::FiftyFiftyFive => "50%-55%",
+            RH2m::FiftyFiveSixty => "55%-60%",
+            RH2m::SixtySixtyFive => "60%-65%",
+            RH2m::SixtyFiveSeventy => "65%-70%",
+            RH2m::SeventySeventyFive => "70%-75%",
+            RH2m::SeventyFiveEighty => "75%-80%",
+            RH2m::EightyEightyFive => "80%-85%",
+            RH2m::EightyFiveNinety => "85%-90%",
+            RH2m::NinetyNinetyFive => "90%-95%",
+            RH2m::NinetyFiveNinetyNine => "95%-99%",
+            RH2m::NinetyNineHundred => "100%",
+        }
+    }
+}
+
+impl Display for RH2m {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_str())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
 #[repr(u8)]
@@ -296,14 +355,12 @@ mod test {
 
     #[test]
     fn test_get_forecast() {
-        println!("{}", get_forecast());
         assert!(get_forecast().contains("astro"));
     }
 
     #[test]
     fn test_prepare_data() {
         let data = prepare_data().unwrap();
-        println!("{:?}", data);
         assert_eq!(data.product, "astro");
     }
 }

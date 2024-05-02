@@ -1,3 +1,4 @@
+use chrono::{Duration, NaiveDateTime};
 use ratatui::{
     layout::Alignment,
     style::{Color, Style},
@@ -155,6 +156,18 @@ fn render_scheduling_menu(
     );
 }
 
+fn weather_time(time_init: &str, delta_t: i8) -> String {
+    // Parse the initial time string into a NaiveDateTime
+    let time_start: NaiveDateTime =
+        NaiveDateTime::parse_from_str(time_init, "%Y%m%d%H%M").expect("Invalid time format");
+
+    // Add the delta_t hours to the initial time
+    let time = time_start + Duration::hours(delta_t as i64);
+
+    // Format the resulting time as a string
+    time.format("%d/%m %H:%M").to_string()
+}
+
 fn create_table(data: &ForecastResponse) -> Table {
     // Create the table header
     let header = vec![
@@ -172,6 +185,9 @@ fn create_table(data: &ForecastResponse) -> Table {
     .map(Cell::from)
     .collect::<Row>()
     .style(Style::default().add_modifier(Modifier::BOLD));
+    let mut time_start: String = data.init.clone();
+    let minutes: &str = "00";
+    time_start.push_str(minutes);
 
     // Create table rows
     let rows = data
@@ -179,7 +195,7 @@ fn create_table(data: &ForecastResponse) -> Table {
         .iter()
         .map(|forecast| {
             Row::new(vec![
-                Cell::from(forecast.timepoint.to_string()),
+                Cell::from(weather_time(&time_start, forecast.timepoint)),
                 Cell::from(forecast.cloud_cover.to_string()), // Assuming CloudCover, Seeing, Transparency, Wind10m have a to_string() method
                 Cell::from(forecast.seeing.to_string()),
                 Cell::from(forecast.transparency.to_string()),
