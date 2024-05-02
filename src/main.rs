@@ -7,8 +7,6 @@ use ratatui::Terminal;
 use std::io;
 
 fn main() -> AppResult<()> {
-    println!("{:?}", dirs::config_local_dir());
-
     // Create an application.
     let mut app = App::new();
 
