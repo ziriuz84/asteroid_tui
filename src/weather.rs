@@ -172,52 +172,6 @@ impl Display for LiftedIndex {
     }
 }
 
-/// Returns a string with lifted index
-///
-/// * `index`: the index from json response
-pub fn get_lifted_index_value(index: i8) -> Option<&'static str> {
-    let lifted_index = HashMap::from([
-        (-10, "Below -7"),
-        (-6, "-7 - -5"),
-        (-4, "-5 - -3"),
-        (-1, "-3 - 0"),
-        (2, "0 - 4"),
-        (6, "4 - 8"),
-        (10, "8 - 11"),
-        (15, "Over 11"),
-    ]);
-    lifted_index.get(&index).cloned()
-}
-
-/// Returns a string with rh range
-///
-/// * `index`: the index from json response
-pub fn get_rh2m_value(index: i8) -> Option<&'static str> {
-    let rh2m = HashMap::from([
-        (-4, "0%-5%"),
-        (-3, "5%-10%"),
-        (-2, "10%-15%"),
-        (-1, "15%-20%"),
-        (0, "20%-25%"),
-        (1, "25%-30%"),
-        (2, "30%-35%"),
-        (3, "35%-40%"),
-        (4, "40%-45%"),
-        (5, "45%-50%"),
-        (6, "50%-55%"),
-        (7, "55%-60%"),
-        (8, "60%-65%"),
-        (9, "65%-70%"),
-        (10, "70%-75%"),
-        (11, "75%-80%"),
-        (12, "80%-85%"),
-        (13, "85%-90%"),
-        (14, "90%-95%"),
-        (15, "95%-99%"),
-        (16, "100%"),
-    ]);
-    rh2m.get(&index).cloned()
-}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
 #[repr(i8)]
 pub enum RH2m {
@@ -338,20 +292,6 @@ pub fn prepare_data() -> Result<ForecastResponse> {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_get_dict_values() {
-        if let Some(test) = get_lifted_index_value(2) {
-            assert_eq!(test, "0 - 4");
-        } else {
-            assert!(panic!());
-        }
-        if let Some(test) = get_rh2m_value(2) {
-            assert_eq!(test, "30%-35%");
-        } else {
-            assert!(panic!());
-        }
-    }
 
     #[test]
     fn test_get_forecast() {
