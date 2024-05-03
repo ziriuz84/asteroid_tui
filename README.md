@@ -1,33 +1,59 @@
-<h1 align="center" id="title">Asteroid_TUI</h1>
+![asteroid_tui](https://socialify.git.ci/ziriuz84/asteroid_tui/image?description=1&descriptionEditable=Tools%20for%20minor%20planets%2C%20blazingly%20fast&forks=1&issues=1&language=1&name=1&owner=1&pulls=1&stargazers=1&theme=Light)
 
-<p align="center"><img src="https://socialify.git.ci/ziriuz84/asteroid_tui/image?description=1&amp;descriptionEditable=Tools%20for%20minor%20planets%2C%20blazingly%20fast&amp;forks=1&amp;issues=1&amp;language=1&amp;name=1&amp;owner=1&amp;pulls=1&amp;stargazers=1&amp;theme=Light" alt="project-image"></p>
+# Asteroid_TUI
 
-<p id="description">Asteroid_TUI is a set of tools for minor planets researchers and enthusiast useful for observation scheduling and planning</p>
+Asteroid_TUI is a set of tools for minor planets researchers and enthusiast useful for observation scheduling and planning
 
-<h2>🧐 Features</h2>
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ziriuz84/asteroid_tui/total)
 
-Here're some of the project's best features:
+## Features
 
 - Weather forecast
+- Observing target list (Coming soon)
+- NeoCP Listing (Coming Soon)
+- Object Ephemeris (Coming soon)
+
+## Installation
+
+### The simple way
+
+Simply download from realease and start the executable
+
+### Install from source
+
+```bash
+  git clone https://github.com/ziriuz84/asteroid_tui
+  cd asteroid_tui
+  cargo install .
+```
+
+## Roadmap
+
 - Observing target list
-- NEOCP
-- Object ephemeris
+- Object Ephemeris
+- Neocp listing
+- Sun & Moon times
 
-<h2>🛠️ Installation Steps:</h2>
+## Support
 
-<p>1. Simply download your release and run it in a terminal</p>
+For support feel free to open issues or go to the discussio section of the repo.
 
-<h2>🍰 Contribution Guidelines:</h2>
+## Contributing
 
-Contributions are welcome. You can submit Issues or Pull Requests without any problem. Any help is more than appreciated
+Contributions are always welcome!
 
-<h2>💻 Built with</h2>
+See `contributing.md` for ways to get started.
 
-Technologies used in the project:
+Please adhere to this project's `code of conduct`.
 
-- Rust
-- Ratatui
+## Authors
 
-<h2>🛡️ License:</h2>
+- [@ziriuz84](https://www.github.com/ziriuz84)
 
-This project is licensed under the MIT
+## Used By
+
+This project is used by the following people or observatories:
+
+- [Osservatorio "Il Coreggiolo" - La Spezia](https://ilcoreggiolo.netlify.app/)
+- [Osservatorio "L. Zannoni" - La Spezia](https://astrofilispezzini.org)
