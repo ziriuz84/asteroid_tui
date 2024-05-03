@@ -1,14 +1,33 @@
-## Simple template
+<h1 align="center" id="title">Asteroid_TUI</h1>
 
-The simple template will create the following project structure:
+<p align="center"><img src="https://socialify.git.ci/ziriuz84/asteroid_tui/image?description=1&amp;descriptionEditable=Tools%20for%20minor%20planets%2C%20blazingly%20fast&amp;forks=1&amp;issues=1&amp;language=1&amp;name=1&amp;owner=1&amp;pulls=1&amp;stargazers=1&amp;theme=Light" alt="project-image"></p>
 
-```text
-src/
-├── app.rs     -> holds the state and application logic
-├── event.rs   -> handles the terminal events (key press, mouse click, resize, etc.)
-├── handler.rs -> handles the key press events and updates the application
-├── lib.rs     -> module definitions
-├── main.rs    -> entry-point
-├── tui.rs     -> initializes/exits the terminal interface
-└── ui.rs      -> renders the widgets / UI
-```
+<p id="description">Asteroid_TUI is a set of tools for minor planets researchers and enthusiast useful for observation scheduling and planning</p>
+
+<h2>🧐 Features</h2>
+
+Here're some of the project's best features:
+
+- Weather forecast
+- Observing target list
+- NEOCP
+- Object ephemeris
+
+<h2>🛠️ Installation Steps:</h2>
+
+<p>1. Simply download your release and run it in a terminal</p>
+
+<h2>🍰 Contribution Guidelines:</h2>
+
+Contributions are welcome. You can submit Issues or Pull Requests without any problem. Any help is more than appreciated
+
+<h2>💻 Built with</h2>
+
+Technologies used in the project:
+
+- Rust
+- Ratatui
+
+<h2>🛡️ License:</h2>
+
+This project is licensed under the MIT
