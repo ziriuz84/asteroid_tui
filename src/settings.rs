@@ -1,6 +1,8 @@
 use config::{Config, ConfigError, Environment, File};
 use dirs;
 use serde_derive::Deserialize;
+use std::fs;
+use std::io::prelude::*;
 
 #[derive(serde_derive::Deserialize, Debug)]
 struct General {
@@ -30,6 +32,26 @@ pub struct Settings {
 impl Settings {
     /// Constructor for Settings struct
     pub fn new() -> Result<Self, ConfigError> {
+        if fs::metadata(
+            dirs::config_local_dir()
+                .unwrap()
+                .join("asteroid_tui")
+                .to_str()
+                .unwrap(),
+        )
+        .is_err()
+        {
+            if let Err(err) = fs::create_dir(
+                dirs::config_local_dir()
+                    .unwrap()
+                    .join("asteroid_tui")
+                    .to_str()
+                    .unwrap(),
+            ) {
+                println!("Error in creating directory: {}", err);
+            } else {
+            }
+        }
         let s = Config::builder()
             .add_source(File::with_name(
                 dirs::config_local_dir()
