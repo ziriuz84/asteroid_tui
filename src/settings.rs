@@ -1,15 +1,18 @@
 use config::{Config, ConfigError, Environment, File};
 use dirs;
+use rand::Rng;
 use serde_derive::Deserialize;
 use std::fs;
 use std::io::prelude::*;
+use std::path::PathBuf;
+use toml;
 
-#[derive(serde_derive::Deserialize, Debug)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 struct General {
     lang: String,
 }
 
-#[derive(serde_derive::Deserialize, Debug)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 struct Observatory {
     place: String,
     latitude: f32,
@@ -23,12 +26,151 @@ struct Observatory {
     east_altitude: i32,
     west_altitude: i32,
 }
-#[derive(serde_derive::Deserialize, Debug)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 pub struct Settings {
     general: General,
     observatory: Observatory,
 }
 
+/// Finds if config file exists or create it
+fn file_exists_or_create() -> Result<(), Box<dyn std::error::Error>> {
+    let config_dir = dirs::config_local_dir().ok_or("Failed to get config local dir")?;
+    let asteroid_tui_path = config_dir.join("asteroid_tui");
+
+    // Ensure the directory exists
+    if asteroid_tui_path.exists() {
+        fs::create_dir_all(&asteroid_tui_path)?;
+    }
+
+    // Create or update the config file
+    let config_file_path = asteroid_tui_path.join("config.toml");
+    if config_file_path.exists() {
+        let default_settings: Settings = default_settings();
+        let default = toml::to_string(&default_settings)?;
+        fs::write(config_file_path.clone(), default)?;
+    }
+
+    // Open the file for external use
+
+    Ok(())
+}
+
+/// Creates default settings for file creation
+fn default_settings() -> Settings {
+    let mut rng = rand::thread_rng();
+    let default_general: General = General {
+        lang: "en".to_string(),
+    };
+    let default_observatory: Observatory = Observatory {
+        place: "default".to_string(),
+        latitude: rng.gen_range(0.1..89.9) as f32,
+        longitude: rng.gen_range(0.1..179.9) as f32,
+        altitude: rng.gen_range(0.1..100.0) as f32,
+        observatory_name: "default".to_string(),
+        observer_name: "default".to_string(),
+        mpc_code: "500".to_string(),
+        nord_altitude: 0,
+        east_altitude: 0,
+        south_altitude: 0,
+        west_altitude: 0,
+    };
+    Settings {
+        general: default_general,
+        observatory: default_observatory,
+    }
+}
+
+fn parse_float64(value: &str) -> Result<f64, Box<dyn std::error::Error>> {
+    match value.parse::<f64>() {
+        Ok(value) => Ok(value),
+        Err(_) => Err("Could not parse value as float".into()),
+    }
+}
+
+fn parse_integer64(value: &str) -> Result<i64, Box<dyn std::error::Error>> {
+    match value.parse::<i64>() {
+        Ok(value) => Ok(value),
+        Err(_) => Err("Could not parse value as float".into()),
+    }
+}
+
+fn modify_field_in_file(key: &str, value: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Read the file
+    let contents = fs::read_to_string(
+        dirs::config_local_dir()
+            .unwrap()
+            .join("asteroid_tui")
+            .join("config.toml")
+            .to_str()
+            .unwrap(),
+    )?;
+
+    // Parse the TOML contents into a HashMap
+    let mut settings: toml::Value = toml::from_str(&contents)?;
+
+    // Modify the field
+    /*
+    if let Some(table) = settings.get_mut(key) {
+        table.insert("new_value".to_string(), value.to_string());
+    } else {
+        settings.insert(key.to_string(), toml::Value::String(value.to_string()));
+    }
+    */
+
+    match key {
+        "lang" => settings["general"]["lang"] = toml::Value::String(value.to_string()),
+        "place" => settings["observatory"]["place"] = toml::Value::String(value.to_string()),
+        "latitude" => {
+            settings["observatory"]["latitude"] = toml::Value::Float(parse_float64(value).unwrap())
+        }
+        "longitude" => {
+            settings["observatory"]["longitude"] = toml::Value::Float(parse_float64(value).unwrap())
+        }
+        "altitude" => {
+            settings["observatory"]["altitude"] = toml::Value::Float(parse_float64(value).unwrap())
+        }
+        "observatory_name" => {
+            settings["observatory"]["observatory_name"] = toml::Value::String(value.to_string())
+        }
+        "observer_name" => {
+            settings["observatory"]["observer_name"] = toml::Value::String(value.to_string())
+        }
+        "mpc_code" => settings["observatory"]["mpc_code"] = toml::Value::String(value.to_string()),
+        "nord_altitude" => {
+            settings["observatory"]["nord_altitude"] =
+                toml::Value::Integer(parse_integer64(value).unwrap())
+        }
+        "south_altitude" => {
+            settings["observatory"]["south_altitude"] =
+                toml::Value::Integer(parse_integer64(value).unwrap())
+        }
+        "east_altitude" => {
+            settings["observatory"]["east_altitude"] =
+                toml::Value::Integer(parse_integer64(value).unwrap())
+        }
+        "west_altitude" => {
+            settings["observatory"]["west_altitude"] =
+                toml::Value::Integer(parse_integer64(value).unwrap())
+        }
+        _ => {}
+    }
+
+    // Serialize the updated settings back into a string
+    let updated_contents = toml::to_string(&settings)?;
+
+    // Write the updated contents back to the file
+    fs::write(
+        dirs::config_local_dir()
+            .unwrap()
+            .join("asteroid_tui")
+            .join("config.toml")
+            .to_str()
+            .unwrap(),
+        updated_contents,
+    )?;
+
+    Ok(())
+}
 impl Settings {
     /// Constructor for Settings struct
     pub fn new() -> Result<Self, ConfigError> {
@@ -50,7 +192,34 @@ impl Settings {
             ) {
                 println!("Error in creating directory: {}", err);
             } else {
+                let mut file = fs::File::create(
+                    dirs::config_local_dir()
+                        .unwrap()
+                        .join("asteroid_tui")
+                        .join("config.toml")
+                        .to_str()
+                        .unwrap(),
+                )
+                .unwrap();
+                let default_settings: Settings = default_settings();
+                let default = toml::to_string(&default_settings).unwrap();
+                file.write_all(default.as_bytes())
+                    .expect("Error in writing to config file");
             }
+        } else {
+            let mut file = fs::File::create(
+                dirs::config_local_dir()
+                    .unwrap()
+                    .join("asteroid_tui")
+                    .join("config.toml")
+                    .to_str()
+                    .unwrap(),
+            )
+            .unwrap();
+            let default_settings: Settings = default_settings();
+            let default = toml::to_string(&default_settings).unwrap();
+            file.write_all(default.as_bytes())
+                .expect("Error in writing to config file");
         }
         let s = Config::builder()
             .add_source(File::with_name(
@@ -69,6 +238,8 @@ impl Settings {
     pub fn get_lang(&self) -> &String {
         &self.general.lang
     }
+
+    pub fn set_lang(&mut self, lang: String) {}
 
     /// Get place value from settings
     pub fn get_place(&self) -> &String {
