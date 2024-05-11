@@ -69,10 +69,10 @@ fn default_settings() -> Settings {
         observatory_name: "default".to_string(),
         observer_name: "default".to_string(),
         mpc_code: "500".to_string(),
-        nord_altitude: 0,
-        east_altitude: 0,
-        south_altitude: 0,
-        west_altitude: 0,
+        nord_altitude: 1,
+        east_altitude: 1,
+        south_altitude: 1,
+        west_altitude: 1,
     };
     Settings {
         general: default_general,
@@ -80,6 +80,9 @@ fn default_settings() -> Settings {
     }
 }
 
+/// Parses value as float
+///
+/// * `value`: The value to be parsed
 fn parse_float64(value: &str) -> Result<f64, Box<dyn std::error::Error>> {
     match value.parse::<f64>() {
         Ok(value) => Ok(value),
@@ -87,6 +90,9 @@ fn parse_float64(value: &str) -> Result<f64, Box<dyn std::error::Error>> {
     }
 }
 
+/// Parse value as integer
+///
+/// * `value`: The value to be parsed
 fn parse_integer64(value: &str) -> Result<i64, Box<dyn std::error::Error>> {
     match value.parse::<i64>() {
         Ok(value) => Ok(value),

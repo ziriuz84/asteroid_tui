@@ -13,6 +13,12 @@ pub enum CurrentScreen {
     WeatherForecast,
 }
 
+#[derive(Debug)]
+pub enum InputMode {
+    Normal,
+    Editing,
+}
+
 /// Application.
 #[derive(Debug)]
 pub struct App {
@@ -22,6 +28,9 @@ pub struct App {
     pub counter: u8,
     pub current_screen: CurrentScreen,
     pub weather_requested: ForecastResponse,
+    pub character_index: usize,
+    pub input_mode: InputMode,
+    pub input: String,
 }
 
 impl Default for App {
@@ -32,6 +41,9 @@ impl Default for App {
             counter: 0,
             current_screen: CurrentScreen::MainMenu,
             weather_requested: weather_data,
+            character_index: 0,
+            input_mode: InputMode::Normal,
+            input: String::new(),
         }
     }
 }
@@ -48,17 +60,5 @@ impl App {
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {
         self.running = false;
-    }
-
-    pub fn increment_counter(&mut self) {
-        if let Some(res) = self.counter.checked_add(1) {
-            self.counter = res;
-        }
-    }
-
-    pub fn decrement_counter(&mut self) {
-        if let Some(res) = self.counter.checked_sub(1) {
-            self.counter = res;
-        }
     }
 }

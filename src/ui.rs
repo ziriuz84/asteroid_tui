@@ -120,6 +120,38 @@ fn render_main_menu(
     );
 }
 
+fn render_configuration_menu(
+    app: &mut App,
+    frame: &mut Frame,
+    layout: std::rc::Rc<[ratatui::layout::Rect]>,
+) {
+    frame.render_widget(
+        Paragraph::new("AsteroidTUI")
+            .block(
+                Block::bordered()
+                    //.title("Template")
+                    //.title_alignment(Alignment::Center)
+                    .border_type(BorderType::Rounded),
+            )
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[0],
+    );
+    frame.render_widget(
+        Paragraph::new("")
+            .block(Block::default())
+            .style(Style::default().bg(Color::Black)),
+        layout[1],
+    );
+    frame.render_widget(
+        Paragraph::new("Press q or Ctrl+C to quit")
+            .block(Block::bordered().border_type(BorderType::Rounded))
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[3],
+    );
+}
+
 /// Renders scheduling menu
 ///
 /// * `app`: app state struct
