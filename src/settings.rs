@@ -34,8 +34,8 @@ pub struct Settings {
 
 /// Finds if config file exists or create it
 fn file_exists_or_create() -> Result<(), Box<dyn std::error::Error>> {
-    let config_dir = dirs::config_local_dir().ok_or("Failed to get config local dir")?;
-    let asteroid_tui_path = config_dir.join("asteroid_tui");
+    let config_dir: PathBuf = dirs::config_local_dir().ok_or("Failed to get config local dir")?;
+    let asteroid_tui_path: PathBuf = config_dir.join("asteroid_tui");
 
     // Ensure the directory exists
     if asteroid_tui_path.exists() {
@@ -46,7 +46,7 @@ fn file_exists_or_create() -> Result<(), Box<dyn std::error::Error>> {
     let config_file_path = asteroid_tui_path.join("config.toml");
     if config_file_path.exists() {
         let default_settings: Settings = default_settings();
-        let default = toml::to_string(&default_settings)?;
+        let default: String = toml::to_string(&default_settings)?;
         fs::write(config_file_path.clone(), default)?;
     }
 

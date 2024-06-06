@@ -43,6 +43,10 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         CurrentScreen::WeatherForecast => {
             render_weather_forecast(app, frame, layout);
         }
+        CurrentScreen::ConfigMenu => {
+            render_configuration_menu(app, frame, layout);
+        }
+        _ => {}
     }
 }
 

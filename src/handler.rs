@@ -13,6 +13,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 app.quit();
             }
+            match app.current_screen {
+                CurrentScreen::MainMenu => app.current_screen = CurrentScreen::ConfigMenu,
+                _ => {}
+            }
         }
         KeyCode::Char('s') | KeyCode::Char('S') => match app.current_screen {
             CurrentScreen::MainMenu => app.current_screen = CurrentScreen::SchedulingMenu,
@@ -27,13 +31,6 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             CurrentScreen::SchedulingMenu => app.current_screen = CurrentScreen::WeatherForecast,
             _ => {}
         },
-        // Counter handlers
-        KeyCode::Right => {
-            app.increment_counter();
-        }
-        KeyCode::Left => {
-            app.decrement_counter();
-        }
         // Other handlers you could add here.
         _ => {}
     }

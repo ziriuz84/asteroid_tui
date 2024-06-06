@@ -1,4 +1,3 @@
-use crate::settings::Settings;
 use crate::weather::prepare_data;
 use crate::weather::ForecastResponse;
 use std::error;
@@ -11,6 +10,7 @@ pub enum CurrentScreen {
     MainMenu,
     SchedulingMenu,
     WeatherForecast,
+    ConfigMenu,
 }
 
 #[derive(Debug)]
