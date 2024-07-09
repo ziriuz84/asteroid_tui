@@ -25,10 +25,21 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         KeyCode::Char('b') | KeyCode::Char('B') => match app.current_screen {
             CurrentScreen::SchedulingMenu => app.current_screen = CurrentScreen::MainMenu,
             CurrentScreen::WeatherForecast => app.current_screen = CurrentScreen::SchedulingMenu,
+            CurrentScreen::ConfigMenu => app.current_screen = CurrentScreen::MainMenu,
+            CurrentScreen::ObservatoryConfigMenu => app.current_screen = CurrentScreen::ConfigMenu,
+            CurrentScreen::GeneralConfigMenu => app.current_screen = CurrentScreen::ConfigMenu,
             _ => {}
         },
         KeyCode::Char('w') | KeyCode::Char('W') => match app.current_screen {
             CurrentScreen::SchedulingMenu => app.current_screen = CurrentScreen::WeatherForecast,
+            _ => {}
+        },
+        KeyCode::Char('o') | KeyCode::Char('O') => match app.current_screen {
+            CurrentScreen::ConfigMenu => app.current_screen = CurrentScreen::ObservatoryConfigMenu,
+            _ => {}
+        },
+        KeyCode::Char('g') | KeyCode::Char('G') => match app.current_screen {
+            CurrentScreen::ConfigMenu => app.current_screen = CurrentScreen::GeneralConfigMenu,
             _ => {}
         },
         // Other handlers you could add here.

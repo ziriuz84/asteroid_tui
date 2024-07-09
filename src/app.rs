@@ -11,12 +11,31 @@ pub enum CurrentScreen {
     SchedulingMenu,
     WeatherForecast,
     ConfigMenu,
+    ObservatoryConfigMenu,
+    GeneralConfigMenu,
+    InputMode,
 }
 
 #[derive(Debug)]
 pub enum InputMode {
     Normal,
     Editing,
+}
+
+#[derive(Debug)]
+pub enum InputField {
+    PlaceName,
+    Latitude,
+    Longitude,
+    Altitude,
+    ObservatoryName,
+    ObserverName,
+    MPCCode,
+    NorthAltitude,
+    SouthAltitude,
+    EastAltitude,
+    WestAltitude,
+    None,
 }
 
 /// Application.
@@ -31,6 +50,7 @@ pub struct App {
     pub character_index: usize,
     pub input_mode: InputMode,
     pub input: String,
+    pub input_field: InputField,
 }
 
 impl Default for App {
@@ -44,6 +64,7 @@ impl Default for App {
             character_index: 0,
             input_mode: InputMode::Normal,
             input: String::new(),
+            input_field: InputField::None,
         }
     }
 }

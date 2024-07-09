@@ -46,6 +46,10 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         CurrentScreen::ConfigMenu => {
             render_configuration_menu(app, frame, layout);
         }
+        CurrentScreen::ObservatoryConfigMenu => {
+            render_observatory_configuration_menu(app, frame, layout)
+        }
+        CurrentScreen::GeneralConfigMenu => render_general_configuration_menu(app, frame, layout),
         _ => {}
     }
 }
@@ -165,7 +169,7 @@ fn render_configuration_menu(
         layout[2],
     );
     frame.render_widget(
-        Paragraph::new("Press q or Ctrl+C to quit")
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))
             .style(Style::default().fg(Color::Red).bg(Color::Black))
             .centered(),
@@ -205,8 +209,17 @@ fn render_observatory_configuration_menu(
         Paragraph::new(
             "Main Menu\n\
         \n\n\
-        g - General\n\
-        o - Observatory\n\
+        p - Place name\n\
+        l - Latitude\n\
+        L - Longitude\n\
+        a - Altitude\n\
+        o - Observatory name\n\
+        O - Observer name\n\
+        m - MPC code\n\
+        n - North altitude\n\
+        s - South altitude\n\
+        e - East altitude\n\
+        w - West altitude\n\
         q - quit",
         )
         .style(Style::default().fg(Color::Red).bg(Color::Black))
@@ -214,7 +227,7 @@ fn render_observatory_configuration_menu(
         layout[2],
     );
     frame.render_widget(
-        Paragraph::new("Press q or Ctrl+C to quit")
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))
             .style(Style::default().fg(Color::Red).bg(Color::Black))
             .centered(),
@@ -254,8 +267,7 @@ fn render_general_configuration_menu(
         Paragraph::new(
             "Main Menu\n\
         \n\n\
-        g - General\n\
-        o - Observatory\n\
+        l - Language\n\
         q - quit",
         )
         .style(Style::default().fg(Color::Red).bg(Color::Black))
@@ -263,7 +275,7 @@ fn render_general_configuration_menu(
         layout[2],
     );
     frame.render_widget(
-        Paragraph::new("Press q or Ctrl+C to quit")
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))
             .style(Style::default().fg(Color::Red).bg(Color::Black))
             .centered(),
@@ -312,7 +324,7 @@ fn render_scheduling_menu(
         layout[2],
     );
     frame.render_widget(
-        Paragraph::new("Press q or Ctrl+C to quit")
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))
             .style(Style::default().fg(Color::Red).bg(Color::Black))
             .centered(),
@@ -443,7 +455,7 @@ fn render_weather_forecast(
         layout[2],
     );
     frame.render_widget(
-        Paragraph::new("Press q or Ctrl+C to quit")
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
             .block(Block::bordered().border_type(BorderType::Rounded))
             .style(Style::default().fg(Color::Red).bg(Color::Black))
             .centered(),
