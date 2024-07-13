@@ -10,6 +10,8 @@ use serde_json::{Error, Result};
 
 use ratatui::prelude::*;
 
+use tui_textarea::{Input, Key, TextArea};
+
 use crate::app::App;
 use crate::app::CurrentScreen;
 use crate::weather::prepare_data;
@@ -241,6 +243,54 @@ fn render_observatory_configuration_menu(
 /// * `frame`: frame to work in
 /// * `layout`: layout
 fn render_general_configuration_menu(
+    app: &mut App,
+    frame: &mut Frame,
+    layout: std::rc::Rc<[ratatui::layout::Rect]>,
+) {
+    frame.render_widget(
+        Paragraph::new("AsteroidTUI")
+            .block(
+                Block::bordered()
+                    //.title("Template")
+                    //.title_alignment(Alignment::Center)
+                    .border_type(BorderType::Rounded),
+            )
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[0],
+    );
+    frame.render_widget(
+        Paragraph::new("")
+            .block(Block::default())
+            .style(Style::default().bg(Color::Black)),
+        layout[1],
+    );
+    frame.render_widget(
+        Paragraph::new(
+            "Main Menu\n\
+        \n\n\
+        l - Language\n\
+        q - quit",
+        )
+        .style(Style::default().fg(Color::Red).bg(Color::Black))
+        .centered(),
+        layout[2],
+    );
+    frame.render_widget(
+        Paragraph::new("Press b to go Back, q or Ctrl+C to quit")
+            .block(Block::bordered().border_type(BorderType::Rounded))
+            .style(Style::default().fg(Color::Red).bg(Color::Black))
+            .centered(),
+        layout[3],
+    );
+}
+
+/// Renders general configuration menu
+///
+/// * `app`: app state struct
+/// * `frame`: frame to work in
+/// * `layout`: layout
+fn render_input_field(
     app: &mut App,
     frame: &mut Frame,
     layout: std::rc::Rc<[ratatui::layout::Rect]>,
