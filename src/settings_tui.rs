@@ -35,10 +35,10 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\n   General Settings
-    1. Language
-    9. Back
-    0. Quit"
+        "\n\n\nGeneral Settings
+1. Language
+9. Back
+0. Quit"
     );
     let mut p = Readline::default()
         .title("Select an option:")
@@ -59,7 +59,7 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
 fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
-    println!("\n\n\n   Language Settings");
+    println!("\n\n\nLanguage Settings");
     let mut p = Listbox::new(vec!["en"])
         .title("Select language:")
         .listbox_lines(5)
@@ -77,22 +77,68 @@ impl TryFrom<Vec<&str>> for Settings {
         //     return Err(ParseIntError("Invalid number of elements"));
         // }
 
+        let actual_settings: Settings = Settings::new().unwrap();
+
         let general = General {
             lang: "".to_string(),
         };
 
         let observatory = Observatory {
-            place: value[0].to_string(),
-            latitude: value[1].parse::<f32>().unwrap(),
-            longitude: value[2].parse::<f32>().unwrap(),
-            altitude: value[3].parse::<f32>().unwrap(),
-            observatory_name: value[4].to_string(),
-            observer_name: value[5].to_string(),
-            mpc_code: value[6].to_string(),
-            north_altitude: value[7].parse::<i32>()?,
-            south_altitude: value[8].parse::<i32>()?,
-            east_altitude: value[9].parse::<i32>()?,
-            west_altitude: value[10].parse::<i32>()?, // Nota: stiamo usando il valore dell'est per l'ovest
+            place: if value[0].is_empty() {
+                actual_settings.get_place().to_string()
+            } else {
+                value[0].to_string()
+            },
+            latitude: if value[1].is_empty() {
+                actual_settings.get_latitude().clone()
+            } else {
+                value[1].parse::<f32>().unwrap()
+            }, // value[1].parse::<f32>().unwrap(),
+            longitude: if value[2].is_empty() {
+                actual_settings.get_longitude().clone()
+            } else {
+                value[2].parse::<f32>().unwrap()
+            },
+            altitude: if value[3].is_empty() {
+                actual_settings.get_altitude().clone()
+            } else {
+                value[3].parse::<f32>().unwrap()
+            },
+            observatory_name: if value[4].is_empty() {
+                actual_settings.get_observatory_name().to_string()
+            } else {
+                value[4].to_string()
+            },
+            observer_name: if value[5].is_empty() {
+                actual_settings.get_observer_name().to_string()
+            } else {
+                value[5].to_string()
+            },
+            mpc_code: if value[6].is_empty() {
+                actual_settings.get_mpc_code().to_string()
+            } else {
+                value[6].to_string()
+            },
+            north_altitude: if value[7].is_empty() {
+                actual_settings.get_north_altitude().clone()
+            } else {
+                value[7].parse::<i32>()?
+            },
+            south_altitude: if value[8].is_empty() {
+                actual_settings.get_south_altitude().clone()
+            } else {
+                value[8].parse::<i32>()?
+            },
+            east_altitude: if value[9].is_empty() {
+                actual_settings.get_east_altitude().clone()
+            } else {
+                value[9].parse::<i32>()?
+            },
+            west_altitude: if value[10].is_empty() {
+                actual_settings.get_west_altitude().clone()
+            } else {
+                value[10].parse::<i32>()?
+            },
         };
 
         Ok(Settings {
@@ -105,12 +151,13 @@ impl TryFrom<Vec<&str>> for Settings {
 pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
-    println!("\n\n\n   Observatory Settings");
+    let actual_settings: Settings = Settings::new().unwrap();
+    println!("\n\n\nObservatory Settings");
     let mut p = Form::new([
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Place Name:"),
+            prefix: format!("Place Name ({}): ", actual_settings.get_place()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -122,7 +169,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Latitude:"),
+            prefix: format!("Latitude ({}): ", actual_settings.get_latitude()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -134,7 +181,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Longitude:"),
+            prefix: format!("Longitude ({}): ", actual_settings.get_longitude()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -146,7 +193,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Altitude:"),
+            prefix: format!("Altitude ({}): ", actual_settings.get_altitude()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -158,7 +205,10 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Observatory Name:"),
+            prefix: format!(
+                "Observatory Name: ({}): ",
+                actual_settings.get_observatory_name()
+            ),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -170,7 +220,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("Observer Name:"),
+            prefix: format!("Observer Name: ({}): ", actual_settings.get_observer_name()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -182,7 +232,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("MPC Code:"),
+            prefix: format!("MPC Code: ({}): ", actual_settings.get_mpc_code()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -194,7 +244,10 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("North Altitude:"),
+            prefix: format!(
+                "North Altitude ({}): ",
+                actual_settings.get_north_altitude()
+            ),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -206,7 +259,10 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("South Altitude:"),
+            prefix: format!(
+                "South Altitude ({}): ",
+                actual_settings.get_south_altitude()
+            ),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -218,7 +274,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("East Altitude:"),
+            prefix: format!("East Altitude ({}): ", actual_settings.get_east_altitude()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
@@ -230,7 +286,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         text_editor::State {
             texteditor: Default::default(),
             history: Default::default(),
-            prefix: String::from("West Altitude:"),
+            prefix: format!("West Altitude ({}): ", actual_settings.get_west_altitude()),
             mask: Default::default(),
             prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
             active_char_style: StyleBuilder::new().fgc(Color::Red).build(),

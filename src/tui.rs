@@ -44,9 +44,9 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\n   Main Menu
-    1. Settings
-    0. Quit"
+        "\n\n\nMain Menu
+1. Settings
+0. Quit"
     );
     let mut p = Readline::default()
         .title("Select an option:")
@@ -64,11 +64,11 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\n   Settings Menu
-    1. General
-    2. Observatory
-    9. Back
-    0. Quit"
+        "\n\n\nSettings Menu
+1. General
+2. Observatory
+9. Back
+0. Quit"
     );
     let mut p = Readline::default()
         .title("Select an option:")
@@ -79,8 +79,14 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         .prompt()?;
     let mut result = p.run()?;
     match result.as_str() {
-        "1" => settings_tui::general_settings_menu()?,
-        "2" => settings_tui::observatory_settings_menu()?,
+        "1" => {
+            settings_tui::general_settings_menu()?;
+            settings_menu()?
+        }
+        "2" => {
+            settings_tui::observatory_settings_menu()?;
+            settings_menu()?
+        }
         "9" => main_menu()?,
         _ => (),
     }
