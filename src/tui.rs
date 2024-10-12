@@ -8,6 +8,8 @@ use promkit::{
     suggest::Suggest,
 };
 
+use crate::settings_tui;
+
 const OPTIONS_MAIN_MENU: [&str; 2] = ["1", "0"];
 const OPTIONS_SETTINGS_MENU: [&str; 4] = ["1", "2", "9", "0"];
 
@@ -62,7 +64,7 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\n   Main Menu
+        "\n\n\n   Settings Menu
     1. General
     2. Observatory
     9. Back
@@ -77,7 +79,9 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         .prompt()?;
     let mut result = p.run()?;
     match result.as_str() {
-        "b" => main_menu()?,
+        "1" => settings_tui::general_settings_menu()?,
+        "2" => settings_tui::observatory_settings_menu()?,
+        "9" => main_menu()?,
         _ => (),
     }
     Ok(())

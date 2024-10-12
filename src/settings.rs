@@ -7,28 +7,28 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
-struct General {
-    lang: String,
+pub struct General {
+    pub lang: String,
 }
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
-struct Observatory {
-    place: String,
-    latitude: f32,
-    longitude: f32,
-    altitude: f32,
-    observatory_name: String,
-    observer_name: String,
-    mpc_code: String,
-    north_altitude: i32,
-    south_altitude: i32,
-    east_altitude: i32,
-    west_altitude: i32,
+pub struct Observatory {
+    pub place: String,
+    pub latitude: f32,
+    pub longitude: f32,
+    pub altitude: f32,
+    pub observatory_name: String,
+    pub observer_name: String,
+    pub mpc_code: String,
+    pub north_altitude: i32,
+    pub south_altitude: i32,
+    pub east_altitude: i32,
+    pub west_altitude: i32,
 }
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
 pub struct Settings {
-    general: General,
-    observatory: Observatory,
+    pub general: General,
+    pub observatory: Observatory,
 }
 
 /// Finds if config file exists or create it
