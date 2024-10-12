@@ -7,13 +7,13 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Display;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, serde::Serialize)]
 pub struct Wind10m {
     pub direction: String,
     pub speed: Wind10mVelocity,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Forecast {
     pub timepoint: i8,
     #[serde(rename = "cloudcover")]
@@ -27,14 +27,14 @@ pub struct Forecast {
     pub prec_type: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ForecastResponse {
     product: String,
     pub init: String,
     pub dataseries: Vec<Forecast>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub enum CloudCover {
     Six = 1,
@@ -70,7 +70,7 @@ impl Display for CloudCover {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub enum Seeing {
     ZeroFive = 1,
@@ -104,7 +104,7 @@ impl Display for Seeing {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub enum Transparency {
     ZeroThree = 1,
@@ -138,7 +138,7 @@ impl Display for Transparency {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(i8)]
 pub enum LiftedIndex {
     BelowSeven = -10,
@@ -172,7 +172,7 @@ impl Display for LiftedIndex {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(i8)]
 pub enum RH2m {
     ZeroFive = -4,
@@ -232,7 +232,7 @@ impl Display for RH2m {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize_repr, Serialize_repr)]
 #[repr(u8)]
 pub enum Wind10mVelocity {
     BelowZeroThree = 1,
