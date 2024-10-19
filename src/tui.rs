@@ -8,9 +8,10 @@ use promkit::{
     suggest::Suggest,
 };
 
+use crate::scheduling_tui;
 use crate::settings_tui;
 
-const OPTIONS_MAIN_MENU: [&str; 2] = ["1", "0"];
+const OPTIONS_MAIN_MENU: [&str; 3] = ["1", "2", "0"];
 const OPTIONS_SETTINGS_MENU: [&str; 4] = ["1", "2", "9", "0"];
 
 // Funzione di validazione
@@ -46,6 +47,7 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "\n\n\nMain Menu
 1. Settings
+2. Scheduling
 0. Quit"
     );
     let mut p = Readline::default()
@@ -55,6 +57,7 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
     let mut result = p.run()?;
     match result.as_str() {
         "1" => settings_menu()?,
+        "2" => scheduling_tui::scheduling_menu()?,
         _ => (),
     }
     Ok(())

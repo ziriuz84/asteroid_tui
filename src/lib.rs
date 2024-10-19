@@ -2,6 +2,7 @@
 pub mod settings;
 pub mod settings_tui;
 
+pub mod scheduling_tui;
 /// Weather library
 pub mod weather;
 
