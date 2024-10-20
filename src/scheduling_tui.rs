@@ -32,7 +32,7 @@ fn add_hours(dt: DateTime<Utc>, hours: u32) -> DateTime<Utc> {
 }
 
 fn format_output(dt: DateTime<Utc>) -> String {
-    let items = StrftimeItems::new("%d-%m %H");
+    let items = StrftimeItems::new("%a %H");
     dt.format_with_items(items).to_string()
 }
 
@@ -71,15 +71,7 @@ fn create_weather_table() {
     ];
 
     table.set_width(80).set_header(vec![
-        "Time",
-        "Cloud Cover",
-        "Seeing",
-        "Transparency",
-        "Lifted Index",
-        "RH2m",
-        "Wind",
-        "Temp",
-        "Prec",
+        "Time", "Clouds", "Seeing", "Transp", "Instab", "RH2m", "Wind", "T", "Prec",
     ]);
     for item in forecast {
         let row: Vec<String> = converters
