@@ -32,7 +32,7 @@ fn generate_settings_menu_error_message(option: &str) -> String {
 }
 
 pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nGeneral Settings
@@ -57,7 +57,7 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nLanguage Settings");
     let mut p = Listbox::new(vec!["en"])
@@ -149,7 +149,7 @@ impl TryFrom<Vec<&str>> for Settings {
 }
 
 pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     let actual_settings: Settings = Settings::new().unwrap();
     println!("\n\n\nObservatory Settings");

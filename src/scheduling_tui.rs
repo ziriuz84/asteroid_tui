@@ -6,19 +6,21 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
 use promkit::{
     crossterm::{
-        self, cursor, execute,
-        style::Color,
+        self,
+        cursor,
+        execute,
+        // style::Color,
         terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     },
-    preset::form::Form,
-    preset::listbox::Listbox,
+    // preset::form::Form,
+    // preset::listbox::Listbox,
     preset::readline::Readline,
-    style::StyleBuilder,
-    suggest::Suggest,
-    text_editor,
+    // style::StyleBuilder,
+    // suggest::Suggest,
+    // text_editor,
 };
-use std::convert::TryFrom;
-use std::num::ParseIntError;
+// use std::convert::TryFrom;
+// use std::num::ParseIntError;
 
 use comfy_table::Table;
 
@@ -37,7 +39,7 @@ fn format_output(dt: DateTime<Utc>) -> String {
 }
 
 fn create_weather_table() {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     let mut table = Table::new();
     let data = weather::prepare_data().unwrap();
     let timezero = format!("{}00", data.init);
@@ -100,7 +102,7 @@ fn generate_scheduling_menu_error_message(option: &str) -> String {
 }
 
 pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nScheduling Menu
@@ -115,7 +117,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
             generate_scheduling_menu_error_message,
         )
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => create_weather_table(),
         "9" => tui::settings_menu()?,
@@ -141,7 +143,7 @@ fn generate_weather_forecast_error_message(option: &str) -> String {
 }
 
 pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nWeather Forecast\n\n");
     create_weather_table();
@@ -152,10 +154,9 @@ pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
             generate_weather_forecast_error_message,
         )
         .prompt()?;
-    let mut result = p.run()?;
-    match result.as_str() {
-        "9" => tui::settings_menu()?,
-        _ => (),
+    let result = p.run()?;
+    if result.as_str() == "9" {
+        tui::settings_menu()?
     }
     Ok(())
 }

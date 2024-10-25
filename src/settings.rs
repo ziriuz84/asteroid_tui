@@ -271,7 +271,7 @@ impl Settings {
                 };
 
                 println!("Chiave: {}, Valore: {}", key_str, processed_value);
-                modify_field_in_file(key_str.to_string(), &processed_value);
+                let _ = modify_field_in_file(key_str.to_string(), &processed_value);
             }
         }
         Ok(())

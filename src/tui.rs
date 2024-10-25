@@ -42,7 +42,7 @@ fn generate_settings_menu_error_message(option: &str) -> String {
 }
 
 pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nMain Menu
@@ -54,7 +54,7 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
         .title("Select an option:")
         .validator(validate_main_menu_option, generate_main_menu_error_message)
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => settings_menu()?,
         "2" => scheduling_tui::scheduling_menu()?,
@@ -64,7 +64,7 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nSettings Menu
@@ -80,7 +80,7 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
             generate_settings_menu_error_message,
         )
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => {
             settings_tui::general_settings_menu()?;
