@@ -1,16 +1,15 @@
 use promkit::{
     crossterm::{
-        self, cursor, execute,
-        style::Color,
-        terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
+        execute,
+        terminal::{disable_raw_mode, Clear, ClearType},
     },
     preset::readline::Readline,
-    suggest::Suggest,
 };
 
+use crate::scheduling_tui;
 use crate::settings_tui;
 
-const OPTIONS_MAIN_MENU: [&str; 2] = ["1", "0"];
+const OPTIONS_MAIN_MENU: [&str; 3] = ["1", "2", "0"];
 const OPTIONS_SETTINGS_MENU: [&str; 4] = ["1", "2", "9", "0"];
 
 // Funzione di validazione
@@ -41,27 +40,29 @@ fn generate_settings_menu_error_message(option: &str) -> String {
 }
 
 pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nMain Menu
 1. Settings
+2. Scheduling
 0. Quit"
     );
     let mut p = Readline::default()
         .title("Select an option:")
         .validator(validate_main_menu_option, generate_main_menu_error_message)
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => settings_menu()?,
+        "2" => scheduling_tui::scheduling_menu()?,
         _ => (),
     }
     Ok(())
 }
 
 pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nSettings Menu
@@ -77,7 +78,7 @@ pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
             generate_settings_menu_error_message,
         )
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => {
             settings_tui::general_settings_menu()?;

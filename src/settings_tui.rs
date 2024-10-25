@@ -1,15 +1,14 @@
 use crate::{settings::General, settings::Observatory, settings::Settings, tui};
 use promkit::{
     crossterm::{
-        self, cursor, execute,
+        execute,
         style::Color,
-        terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
+        terminal::{disable_raw_mode, Clear, ClearType},
     },
     preset::form::Form,
     preset::listbox::Listbox,
     preset::readline::Readline,
     style::StyleBuilder,
-    suggest::Suggest,
     text_editor,
 };
 use std::convert::TryFrom;
@@ -32,7 +31,7 @@ fn generate_settings_menu_error_message(option: &str) -> String {
 }
 
 pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
         "\n\n\nGeneral Settings
@@ -47,7 +46,7 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
             generate_settings_menu_error_message,
         )
         .prompt()?;
-    let mut result = p.run()?;
+    let result = p.run()?;
     match result.as_str() {
         "1" => language_menu()?,
         "9" => tui::settings_menu()?,
@@ -57,7 +56,7 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nLanguage Settings");
     let mut p = Listbox::new(vec!["en"])
@@ -90,17 +89,17 @@ impl TryFrom<Vec<&str>> for Settings {
                 value[0].to_string()
             },
             latitude: if value[1].is_empty() {
-                actual_settings.get_latitude().clone()
+                *actual_settings.get_latitude()
             } else {
                 value[1].parse::<f32>().unwrap()
             }, // value[1].parse::<f32>().unwrap(),
             longitude: if value[2].is_empty() {
-                actual_settings.get_longitude().clone()
+                *actual_settings.get_longitude()
             } else {
                 value[2].parse::<f32>().unwrap()
             },
             altitude: if value[3].is_empty() {
-                actual_settings.get_altitude().clone()
+                *actual_settings.get_altitude()
             } else {
                 value[3].parse::<f32>().unwrap()
             },
@@ -120,22 +119,22 @@ impl TryFrom<Vec<&str>> for Settings {
                 value[6].to_string()
             },
             north_altitude: if value[7].is_empty() {
-                actual_settings.get_north_altitude().clone()
+                *actual_settings.get_north_altitude()
             } else {
                 value[7].parse::<i32>()?
             },
             south_altitude: if value[8].is_empty() {
-                actual_settings.get_south_altitude().clone()
+                *actual_settings.get_south_altitude()
             } else {
                 value[8].parse::<i32>()?
             },
             east_altitude: if value[9].is_empty() {
-                actual_settings.get_east_altitude().clone()
+                *actual_settings.get_east_altitude()
             } else {
                 value[9].parse::<i32>()?
             },
             west_altitude: if value[10].is_empty() {
-                actual_settings.get_west_altitude().clone()
+                *actual_settings.get_west_altitude()
             } else {
                 value[10].parse::<i32>()?
             },
@@ -149,7 +148,7 @@ impl TryFrom<Vec<&str>> for Settings {
 }
 
 pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
-    disable_raw_mode();
+    let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     let actual_settings: Settings = Settings::new().unwrap();
     println!("\n\n\nObservatory Settings");
@@ -303,7 +302,7 @@ pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
         new_vec.push(s);
     }
     let mut settings: Settings = Settings::try_from(new_vec)?;
-    settings.set_settings(settings.clone());
+    let _ = settings.set_settings(settings.clone());
 
     println!("Parsed settings: {:?}", settings);
 

@@ -1,7 +1,5 @@
 use config::{Config, ConfigError, File};
 use rand::Rng;
-// use serde_derive::Deserialize;
-use std::collections::HashMap;
 use std::fs;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -253,7 +251,6 @@ impl Settings {
 
         if let serde_json::Value::Object(map) = observatory_value {
             for (key, value) in map {
-                let value_str = serde_json::to_string(&value)?;
                 let key_str = key.as_str();
 
                 // Modifichiamo il match per farlo sempre restituire una stringa
@@ -271,7 +268,7 @@ impl Settings {
                 };
 
                 println!("Chiave: {}, Valore: {}", key_str, processed_value);
-                modify_field_in_file(key_str.to_string(), &processed_value);
+                let _ = modify_field_in_file(key_str.to_string(), &processed_value);
             }
         }
         Ok(())
