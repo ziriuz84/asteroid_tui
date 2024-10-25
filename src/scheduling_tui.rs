@@ -1,32 +1,20 @@
-use crate::{
-    settings::General, settings::Observatory, settings::Settings, tui, weather, weather::Forecast,
-};
-use chrono::format::{DelayedFormat, StrftimeItems};
+use crate::{tui, weather, weather::Forecast};
+use chrono::format::StrftimeItems;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
 use promkit::{
     crossterm::{
-        self,
-        cursor,
         execute,
-        // style::Color,
-        terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
+        terminal::{disable_raw_mode, Clear, ClearType},
     },
-    // preset::form::Form,
-    // preset::listbox::Listbox,
     preset::readline::Readline,
-    // style::StyleBuilder,
-    // suggest::Suggest,
-    // text_editor,
 };
-// use std::convert::TryFrom;
-// use std::num::ParseIntError;
 
 use comfy_table::Table;
 
 fn parse_input(input: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
     let naive_dt = NaiveDateTime::parse_from_str(input, "%Y%m%d%H%M")?;
-    Ok(DateTime::<Utc>::from_utc(naive_dt, Utc))
+    Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc))
 }
 
 fn add_hours(dt: DateTime<Utc>, hours: u32) -> DateTime<Utc> {

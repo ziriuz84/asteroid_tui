@@ -1,9 +1,8 @@
 use crate::settings::Settings;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::{Error, Result};
+use serde_json::Result;
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Display;
 

@@ -3,5 +3,5 @@ use asteroid_tui::tui;
 
 fn main() {
     println!("Welcome to Asteroid_tui!");
-    tui::main_menu();
+    let _ = tui::main_menu();
 }

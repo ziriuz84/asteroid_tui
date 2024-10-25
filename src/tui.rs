@@ -1,11 +1,9 @@
 use promkit::{
     crossterm::{
-        self, cursor, execute,
-        style::Color,
-        terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
+        execute,
+        terminal::{disable_raw_mode, Clear, ClearType},
     },
     preset::readline::Readline,
-    suggest::Suggest,
 };
 
 use crate::scheduling_tui;
