@@ -5,27 +5,61 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
+/// General option structure
+///
+/// * `lang`: language
 pub struct General {
+    /// Language
     pub lang: String,
 }
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
+/// Observatory option structure
+///
+/// * `place`: place name
+/// * `latitude`: latitude
+/// * `longitude`: longitude
+/// * `altitude`: altitude
+/// * `observatory_name`: observatory name
+/// * `observer_name`: observer name
+/// * `mpc_code`: mpc code
+/// * `north_altitude`: north altitude to limit only visible objects
+/// * `south_altitude`: south altitude to limit only visible objects
+/// * `east_altitude`: east altitude to limit only visible objects
+/// * `west_altitude`: west altitude to limit only visible objects
 pub struct Observatory {
+    /// Place name
     pub place: String,
+    /// Latitude
     pub latitude: f32,
+    /// Longitude
     pub longitude: f32,
+    /// Altitude
     pub altitude: f32,
+    /// Observatory name
     pub observatory_name: String,
+    /// Observer name
     pub observer_name: String,
+    /// MPC code
     pub mpc_code: String,
+    /// North altitude to limit only visible objects
     pub north_altitude: i32,
+    /// South altitude to limit only visible objects
     pub south_altitude: i32,
+    /// East altitude to limit only visible objects
     pub east_altitude: i32,
+    /// West altitude to limit only visible objects
     pub west_altitude: i32,
 }
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
+/// Setting structure
+///
+/// * `general`: General settings structure
+/// * `observatory`: Observatory settings structure
 pub struct Settings {
+    /// General settings structure
     pub general: General,
+    /// Observatory settings structure
     pub observatory: Observatory,
 }
 
@@ -97,6 +131,10 @@ fn parse_integer64(value: &str) -> Result<i64, Box<dyn std::error::Error>> {
     }
 }
 
+/// Modifies field in config.toml file
+///
+/// * `key`: The key to be modified
+/// * `value`: The value to be set
 pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Read the file
     let contents = fs::read_to_string(
@@ -242,10 +280,16 @@ impl Settings {
         &self.general.lang
     }
 
+    /// Sets language value in config.toml
+    ///
+    /// * `lang`: lang to be set
     pub fn set_lang(&mut self, lang: String) {
         modify_field_in_file("lang".to_string(), &lang).expect("Error in setting lang, value");
     }
 
+    /// Sets settings in config.toml
+    ///
+    /// * `settings`: settings data to be set
     pub fn set_settings(&mut self, settings: Settings) -> Result<(), serde_json::Error> {
         let observatory_value: serde_json::Value = serde_json::to_value(&settings.observatory)?;
 
@@ -329,6 +373,7 @@ impl Settings {
         &self.observatory.west_altitude
     }
 
+    /// Gets all settings in one
     pub fn get_all_settings(&self) -> Settings {
         self.clone()
     }

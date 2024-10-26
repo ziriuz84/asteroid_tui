@@ -89,6 +89,9 @@ fn generate_scheduling_menu_error_message(option: &str) -> String {
     )
 }
 
+/// Scheduling Menu function
+///
+/// It prints Scheduling Menu and asks the user to choose an option
 pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
@@ -130,6 +133,7 @@ fn generate_weather_forecast_error_message(option: &str) -> String {
     )
 }
 
+/// Weather forecast printing
 pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
