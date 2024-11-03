@@ -28,7 +28,7 @@
 //! data can be called directly with
 //!
 //! ```rust
-//! use crate::sun_moon_times;
+//! use asteroid_tui::sun_moon_times;
 //! let data = sun_moon_times::prepare_data().unwrap();
 //! ```
 
