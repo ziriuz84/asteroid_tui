@@ -66,7 +66,8 @@ fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
         .listbox_lines(5)
         .prompt()?;
     let mut set: Settings = Settings::new().unwrap();
-    set.set_lang(p.run().unwrap());
+    set.set_lang(p.run().unwrap())
+        .unwrap_or_else(|error| println!("Error: {}", error));
     Ok(())
 }
 

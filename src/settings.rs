@@ -283,38 +283,28 @@ impl Settings {
     /// Sets language value in config.toml
     ///
     /// * `lang`: lang to be set
-    pub fn set_lang(&mut self, lang: String) {
-        modify_field_in_file("lang".to_string(), &lang).expect("Error in setting lang, value");
+    pub fn set_lang(&mut self, lang: String) -> Result<(), Box<dyn std::error::Error>> {
+        //modify_field_in_file("lang".to_string(), &lang).expect("Error in setting lang, value");
+        modify_field_in_file("lang".to_string(), &lang)?;
+        Ok(())
     }
 
     /// Sets settings in config.toml
     ///
     /// * `settings`: settings data to be set
-    pub fn set_settings(&mut self, settings: Settings) -> Result<(), serde_json::Error> {
-        let observatory_value: serde_json::Value = serde_json::to_value(&settings.observatory)?;
+    pub fn set_settings(&mut self, settings: Settings) -> Result<(), Box<dyn std::error::Error>> {
+        // Update all fields directly
+        self.observatory = settings.observatory;
 
-        if let serde_json::Value::Object(map) = observatory_value {
-            for (key, value) in map {
-                let key_str = key.as_str();
+        // Write to config file using serde directly
+        let config_path = dirs::config_local_dir()
+            .ok_or("Failed to get config dir")?
+            .join("asteroid_tui")
+            .join("config.toml");
 
-                // Modifichiamo il match per farlo sempre restituire una stringa
-                let processed_value = match key_str {
-                    "place" | "observatory_name" | "observer_name" | "mpc_code" => {
-                        value.as_str().unwrap_or_default().to_string()
-                    }
-                    "latitude" | "longitude" | "altitude" => {
-                        value.as_f64().unwrap_or_default().to_string()
-                    }
-                    "north_altitude" | "south_altitude" | "east_altitude" | "west_altitude" => {
-                        value.as_i64().unwrap_or_default().to_string()
-                    }
-                    _ => continue,
-                };
+        let toml = toml::to_string(&self)?;
+        std::fs::write(config_path, toml)?;
 
-                println!("Chiave: {}, Valore: {}", key_str, processed_value);
-                let _ = modify_field_in_file(key_str.to_string(), &processed_value);
-            }
-        }
         Ok(())
     }
 
