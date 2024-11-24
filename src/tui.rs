@@ -39,6 +39,7 @@ fn generate_settings_menu_error_message(option: &str) -> String {
     )
 }
 
+/// Creates and prints main menu, asking for prompt
 pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
@@ -61,6 +62,7 @@ pub fn main_menu() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Creates and prints settings menu, asking for option
 pub fn settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;

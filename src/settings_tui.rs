@@ -30,6 +30,7 @@ fn generate_settings_menu_error_message(option: &str) -> String {
     )
 }
 
+/// Creates and prints general settings menu, asking for prompt
 pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
@@ -55,6 +56,7 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Creates and prints language menu, asking for option
 fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
@@ -147,6 +149,7 @@ impl TryFrom<Vec<&str>> for Settings {
     }
 }
 
+/// Creates and prints observatory settings menu, asking for prompt
 pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
