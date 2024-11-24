@@ -1,4 +1,6 @@
-use crate::{tui, weather, weather::Forecast};
+use crate::{
+    sun_moon_times, sun_moon_times::SunMoonTimesResponse, tui, weather, weather::Forecast,
+};
 use chrono::format::StrftimeItems;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
@@ -73,7 +75,38 @@ fn create_weather_table() {
     println!("{table}");
 }
 
-const SCHEDULING: [&str; 3] = ["1", "9", "0"];
+fn generate_sun_moon_times_table() {
+    let _ = disable_raw_mode();
+    let data: SunMoonTimesResponse = sun_moon_times::prepare_data().unwrap();
+    println!("All times are {}", data.tzid);
+    println!("Sunrise: {}", data.results.sunrise);
+    println!("Sunset: {}", data.results.sunset);
+    println!("Solar noon: {}", data.results.solar_noon);
+    println!("Day length: {}", data.results.day_length);
+    println!(
+        "Civil twilight begin: {}",
+        data.results.civil_twilight_begin
+    );
+    println!("Civil twilight end: {}", data.results.civil_twilight_end);
+    println!(
+        "Nautical twilight begin: {}",
+        data.results.nautical_twilight_begin
+    );
+    println!(
+        "Nautical twilight end: {}",
+        data.results.nautical_twilight_end
+    );
+    println!(
+        "Astronomical twilight begin: {}",
+        data.results.astronomical_twilight_begin
+    );
+    println!(
+        "Astronomical twilight end: {}",
+        data.results.astronomical_twilight_end
+    );
+}
+
+const SCHEDULING: [&str; 4] = ["1", "2", "9", "0"];
 
 // Funzione di validazione
 fn validate_scheduling_menu_option(option: &str) -> bool {
@@ -98,6 +131,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "\n\n\nScheduling Menu
 1. Weather Forecast
+2. Sun and moon times
 9. Back
 0. Quit"
     );
@@ -111,6 +145,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
     let result = p.run()?;
     match result.as_str() {
         "1" => create_weather_table(),
+        "2" => generate_sun_moon_times_table(),
         "9" => tui::settings_menu()?,
         _ => (),
     }

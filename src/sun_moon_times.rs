@@ -53,16 +53,26 @@ use serde_json::Result;
 /// * `astronomical_twilight_begin`: Astronomical twilight begin time
 /// * `astronomical_twilight_end`: Astronomical twilight end time
 pub struct SunMoonTimes {
-    sunrise: String,
-    sunset: String,
-    solar_noon: String,
-    day_length: String,
-    civil_twilight_begin: String,
-    civil_twilight_end: String,
-    nautical_twilight_begin: String,
-    nautical_twilight_end: String,
-    astronomical_twilight_begin: String,
-    astronomical_twilight_end: String,
+    /// Sunrise time
+    pub sunrise: String,
+    /// Sunset time
+    pub sunset: String,
+    /// Solar noon time
+    pub solar_noon: String,
+    /// Day length
+    pub day_length: String,
+    /// Civil twilight begin time
+    pub civil_twilight_begin: String,
+    /// Civil twilight end time
+    pub civil_twilight_end: String,
+    /// Nautical twilight begin time
+    pub nautical_twilight_begin: String,
+    /// Nautical twilight end time
+    pub nautical_twilight_end: String,
+    /// Astronomical twilight begin time
+    pub astronomical_twilight_begin: String,
+    /// Astronomical twilight end time
+    pub astronomical_twilight_end: String,
 }
 
 #[derive(Debug, Deserialize, serde::Serialize)]
@@ -72,9 +82,11 @@ pub struct SunMoonTimes {
 /// * `status`: status of response
 /// * `tzid`: tzid setted (UTC)
 pub struct SunMoonTimesResponse {
-    results: SunMoonTimes,
+    /// Results with data
+    pub results: SunMoonTimes,
     status: String,
-    tzid: String,
+    /// Timezone specified
+    pub tzid: String,
 }
 
 /// Returns a text string with reponse from sunrise-sunset.org
@@ -88,9 +100,7 @@ fn get_sun_moon_times() -> String {
         ],
     )
     .unwrap();
-    println!("{:?}", url);
     let response = reqwest::blocking::get(url).unwrap().text();
-    println!("{:?}", response);
     response.unwrap()
 }
 
