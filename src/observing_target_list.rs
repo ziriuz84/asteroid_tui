@@ -49,8 +49,10 @@ pub fn get_observing_target_list(settings: &Settings, params: &WhatsUpParams) ->
         "authenticity_token",
         "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D",
     ));
-    full_params.push(("latitude", settings.get_latitude().to_string()).as_str());
-    full_params.push(("longitude", settings.get_longitude().to_string().as_str());
+    let latitude = settings.get_latitude().to_string();
+    full_params.push(("latitude", latitude.as_str()));
+    let longitude = settings.get_longitude().to_string();
+    full_params.push(("longitude", longitude.as_str()));
     full_params.push(("year", params.year.as_str()));
     full_params.push(("month", params.month.as_str()));
     full_params.push(("day", params.day.as_str()));
