@@ -64,7 +64,7 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
     let mut observing_target_list: Vec<PossibleTarget> = Vec::new();
     let settings = Settings::new().unwrap();
     let mut full_params: Vec<(&str, &str)> = Vec::new();
-    full_params.push(("utf8", r"%œ“"));
+    full_params.push(("utf8", "%E2%9C%93"));
     full_params.push((
         "authenticity_token",
         "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D",
