@@ -1,4 +1,5 @@
 use crate::settings::Settings;
+use percent_encoding::percent_decode_str;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
@@ -46,7 +47,7 @@ impl Default for WhatsUpParams {
         let mut params: WhatsUpParams = WhatsUpParams {
             year: "2025".to_string(),
             month: "1".to_string(),
-            day: "9".to_string(),
+            day: "10".to_string(),
             minute: "0".to_string(),
             hour: "0".to_string(),
             duration: "1".to_string(),
@@ -64,11 +65,19 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
     let mut observing_target_list: Vec<PossibleTarget> = Vec::new();
     let settings = Settings::new().unwrap();
     let mut full_params: Vec<(&str, &str)> = Vec::new();
-    full_params.push(("utf8", "%E2%9C%93"));
-    full_params.push((
-        "authenticity_token",
-        "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D",
-    ));
+    let encoded_param = "%E2%9C%93";
+    //full_params.push(("utf8", "%E2%9C%93"));
+    let decoded = percent_decode_str(encoded_param)
+        .decode_utf8_lossy()
+        .into_owned();
+    println!("{}", decoded.as_str());
+    full_params.push(("utf8", decoded.as_str()));
+    let auth_token = "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D";
+    let decoded_auth_token = percent_decode_str(auth_token)
+        .decode_utf8_lossy()
+        .into_owned();
+    println!("{}", decoded_auth_token.as_str());
+    full_params.push(("authenticity_token", decoded_auth_token.as_str()));
     let latitude = settings.get_latitude().to_string();
     full_params.push(("latitude", latitude.as_str()));
     let longitude = settings.get_longitude().to_string();
@@ -85,14 +94,16 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
     full_params.push(("lunar_elong", params.lunar_elong.as_str()));
     full_params.push(("object_type", params.object_type.as_str()));
     full_params.push(("submit", "Submit"));
-    println!("{:?}", full_params);
     let url: reqwest::Url = reqwest::Url::parse_with_params(
         "https://www.minorplanetcenter.net/whatsup/index",
         full_params,
     )
-    .unwrap();
+    .expect("Failed to create url");
     println!("{}", url);
-    let result = reqwest::blocking::get(url)
+    let client = reqwest::blocking::Client::new();
+    let result = client
+        .post(url)
+        .send()
         .expect("Failed on api call")
         .text()
         .expect("Failed to convert to text");
@@ -100,10 +111,13 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
     result
 }
 
-pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
-    let data: Vec<PossibleTarget> =
-        serde_json::from_str(&get_observing_target_list(params).as_str()).unwrap();
-    Ok(data)
+//pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
+pub fn parse_whats_up_response(params: &WhatsUpParams) -> String {
+    //let data: Vec<PossibleTarget> =
+    //    serde_json::from_str(&get_observing_target_list(params).as_str());
+    let data = get_observing_target_list(params);
+    println!("{:?}", data);
+    data
 }
 
 #[cfg(test)]
@@ -112,10 +126,14 @@ mod test {
 
     #[test]
     fn test_get_observing_target_list() {
-        assert!(get_observing_target_list(&WhatsUpParams::default()).contains("Designation"));
+        let result = get_observing_target_list(&WhatsUpParams::default());
+        assert!(result.contains("Designation"));
     }
 
+    //#[test]
     //fn test_parse_whats_up_response() {
-    //    assert!(parse_whats_up_response("").is_ok());
+    //    let data = parse_whats_up_response(&WhatsUpParams::default());
+    //    println!("{:?}", data.unwrap());
+    //    assert!(parse_whats_up_response(&WhatsUpParams::default()).is_ok());
     //}
 }

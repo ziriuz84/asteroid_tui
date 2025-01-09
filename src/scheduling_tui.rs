@@ -1,5 +1,7 @@
 use crate::{
-    sun_moon_times, sun_moon_times::SunMoonTimesResponse, tui, weather, weather::Forecast,
+    observing_target_list, observing_target_list::parse_whats_up_response,
+    observing_target_list::WhatsUpParams, sun_moon_times, sun_moon_times::SunMoonTimesResponse,
+    tui, weather, weather::Forecast,
 };
 use chrono::format::StrftimeItems;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
@@ -106,7 +108,7 @@ fn generate_sun_moon_times_table() {
     );
 }
 
-const SCHEDULING: [&str; 4] = ["1", "2", "9", "0"];
+const SCHEDULING: [&str; 5] = ["1", "2", "3", "9", "0"];
 
 // Funzione di validazione
 fn validate_scheduling_menu_option(option: &str) -> bool {
@@ -132,6 +134,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
         "\n\n\nScheduling Menu
 1. Weather Forecast
 2. Sun and moon times
+3. Observing target list
 9. Back
 0. Quit"
     );
@@ -146,6 +149,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
     match result.as_str() {
         "1" => create_weather_table(),
         "2" => generate_sun_moon_times_table(),
+        "3" => observing_target_list()?,
         "9" => tui::settings_menu()?,
         _ => (),
     }
@@ -174,6 +178,26 @@ pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nWeather Forecast\n\n");
     create_weather_table();
+    let mut p = Readline::default()
+        .title("\n9 to go back, 0 to quit:")
+        .validator(
+            validate_weather_forecast_option,
+            generate_weather_forecast_error_message,
+        )
+        .prompt()?;
+    let result = p.run()?;
+    if result.as_str() == "9" {
+        tui::settings_menu()?
+    }
+    Ok(())
+}
+
+pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
+    let _ = disable_raw_mode();
+    execute!(std::io::stdout(), Clear(ClearType::All))?;
+    println!("\n\n\nObserving Target List\n\n");
+    let data = parse_whats_up_response(&WhatsUpParams::default());
+    println!("{:?}", data);
     let mut p = Readline::default()
         .title("\n9 to go back, 0 to quit:")
         .validator(
