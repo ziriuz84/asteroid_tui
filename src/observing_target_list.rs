@@ -1,12 +1,13 @@
 use crate::settings::Settings;
+use anyhow::{anyhow, Result};
 use chrono::{Datelike, Timelike, Utc};
 use percent_encoding::percent_decode_str;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
-use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::fmt::Display;
-use std::{fmt, thread::current};
+//use serde_json::Result;
+//use serde_repr::{Deserialize_repr, Serialize_repr};
+//use std::fmt::Display;
+//use std::{fmt, thread::current};
 
 /// Possible target structure
 ///
@@ -24,23 +25,48 @@ pub struct PossibleTarget {
     /// Object Dec
     pub dec: String,
     /// Object magnitude
-    pub magnitude: u8,
+    pub magnitude: f32,
     /// Object altitude
-    pub altitude: u8,
+    pub altitude: f32,
 }
 
+/// Request parameters struct
+///
+/// * `year`: Year of scheduled observation
+/// * `month`: Month of scheduled observation
+/// * `day`: Day of scheduled observation
+/// * `hour`: Hour of scheduled observation
+/// * `minute`: Minutes of scheduled observation
+/// * `duration`: Duration of scheduled observation
+/// * `max_objects`: Maximum number of object to retrieve
+/// * `min_alt`: Minimum Altitude of object
+/// * `solar_elong`: Minimum Solar elongation
+/// * `lunar_elong`: Minimum Lunar elongation
+/// * `object_type`: Object type
+#[derive(Debug)]
 pub struct WhatsUpParams {
-    year: String,
-    month: String,
-    day: String,
-    hour: String,
-    minute: String,
-    duration: String,
-    max_objects: String,
-    min_alt: String,
-    solar_elong: String,
-    lunar_elong: String,
-    object_type: String,
+    /// Year of scheduled observation
+    pub year: String,
+    /// Month of scheduled observation
+    pub month: String,
+    /// Day of scheduled observation
+    pub day: String,
+    /// Hour of scheduled observation
+    pub hour: String,
+    /// Minute of scheduled observation
+    pub minute: String,
+    /// Duration of scheduled observation
+    pub duration: String,
+    /// Maximum number of object to retrieve
+    pub max_objects: String,
+    /// Minimum Altitude of object
+    pub min_alt: String,
+    /// Minimum Solar elongation
+    pub solar_elong: String,
+    /// Minimum Lunar elongation
+    pub lunar_elong: String,
+    /// Object type
+    pub object_type: String,
 }
 
 impl Default for WhatsUpParams {
@@ -63,8 +89,22 @@ impl Default for WhatsUpParams {
     }
 }
 
+impl Default for PossibleTarget {
+    fn default() -> Self {
+        PossibleTarget {
+            designation: "None".to_string(),
+            ra: "None".to_string(),
+            dec: "None".to_string(),
+            magnitude: 0.0,
+            altitude: 0.0,
+        }
+    }
+}
+
+/// Gets raw observing target list from MPC
+///
+/// * `params`: WhatsupParams struct with all requested parameters
 fn get_observing_target_list(params: &WhatsUpParams) -> String {
-    let mut observing_target_list: Vec<PossibleTarget> = Vec::new();
     let settings = Settings::new().unwrap();
     let mut full_params: Vec<(&str, &str)> = Vec::new();
     let encoded_param = "%E2%9C%93";
@@ -72,13 +112,11 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
     let decoded = percent_decode_str(encoded_param)
         .decode_utf8_lossy()
         .into_owned();
-    println!("{}", decoded.as_str());
     full_params.push(("utf8", decoded.as_str()));
     let auth_token = "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D";
     let decoded_auth_token = percent_decode_str(auth_token)
         .decode_utf8_lossy()
         .into_owned();
-    println!("{}", decoded_auth_token.as_str());
     full_params.push(("authenticity_token", decoded_auth_token.as_str()));
     let latitude = settings.get_latitude().to_string();
     full_params.push(("latitude", latitude.as_str()));
@@ -101,26 +139,68 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
         full_params,
     )
     .expect("Failed to create url");
-    println!("{}", url);
     let client = reqwest::blocking::Client::new();
-    let result = client
+    client
         .post(url)
         .send()
         .expect("Failed on api call")
         .text()
-        .expect("Failed to convert to text");
-    println!("{}", result);
-    result
+        .expect("Failed to convert to text")
 }
 
-//pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
-pub fn parse_whats_up_response(params: &WhatsUpParams) -> String {
-    //let data: Vec<PossibleTarget> =
-    //    serde_json::from_str(&get_observing_target_list(params).as_str());
+//TODO: Add altitude filtering on different directions
+//TODO: Write better documentation
+
+/// Returns data from what's up list of MPC
+///
+/// * `params`: WhatsupParams struct with all requested parameters
+pub fn parse_whats_up_response(params: &WhatsUpParams) -> Vec<PossibleTarget> {
+    let mut objects: Vec<PossibleTarget> = Vec::new();
     let data = get_observing_target_list(params);
     let document = scraper::Html::parse_document(data.as_str());
-    println!("{:?}", data);
-    data
+    let table_item_selector = scraper::Selector::parse("td").unwrap();
+    let rows_selector =
+        scraper::Selector::parse("#main table:nth-child(1) tr:not(:first-child)").unwrap();
+    let rows: Vec<scraper::ElementRef<'_>> = document.select(&rows_selector).collect();
+    rows.into_iter().for_each(|row| {
+        let cells: Vec<scraper::ElementRef<'_>> = row.select(&table_item_selector).collect();
+        objects.push(create_possible_target(cells).unwrap())
+    });
+    objects
+}
+
+fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<PossibleTarget> {
+    let mut possible_target = PossibleTarget::default();
+
+    // Verifica che ci siano abbastanza elementi
+    if item.len() < 8 {
+        return Err(anyhow!("Not enough elements in input vector"));
+    }
+
+    let designation_selector =
+        scraper::Selector::parse("a").map_err(|e| anyhow!("Failed to parse selector: {}", e))?;
+
+    let designation = item[0]
+        .select(&designation_selector)
+        .next()
+        .ok_or_else(|| anyhow!("Designation element not found"))?;
+
+    possible_target.designation = designation.inner_html();
+
+    possible_target.magnitude = item[2]
+        .inner_html()
+        .parse::<f32>()
+        .map_err(|e| anyhow!("Failed to parse magnitude: {}", e))?;
+
+    possible_target.altitude = item[7]
+        .inner_html()
+        .parse::<f32>()
+        .map_err(|e| anyhow!("Failed to parse altitude: {}", e))?;
+
+    possible_target.ra = item[5].inner_html();
+    possible_target.dec = item[6].inner_html();
+
+    Ok(possible_target)
 }
 
 #[cfg(test)]
@@ -135,8 +215,6 @@ mod test {
 
     #[test]
     fn test_parse_whats_up_response() {
-        let data = parse_whats_up_response(&WhatsUpParams::default());
-        println!("{:?}", data);
-        assert!(parse_whats_up_response(&WhatsUpParams::default()).contains("table"));
+        assert!(!parse_whats_up_response(&WhatsUpParams::default()).is_empty());
     }
 }

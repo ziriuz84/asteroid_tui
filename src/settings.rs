@@ -4,6 +4,8 @@ use std::fs;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
+//TODO: Add minimum altitude on different directions
+
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
 /// General option structure
 ///
@@ -88,15 +90,15 @@ fn file_exists_or_create() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Creates default settings for file creation
 fn default_settings() -> Settings {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let default_general: General = General {
         lang: "en".to_string(),
     };
     let default_observatory: Observatory = Observatory {
         place: "default".to_string(),
-        latitude: rng.gen_range(0.1..89.9) as f32,
-        longitude: rng.gen_range(0.1..179.9) as f32,
-        altitude: rng.gen_range(0.1..100.0) as f32,
+        latitude: rng.random_range(0.1..89.9) as f32,
+        longitude: rng.random_range(0.1..179.9) as f32,
+        altitude: rng.random_range(0.1..100.0) as f32,
         observatory_name: "default".to_string(),
         observer_name: "default".to_string(),
         mpc_code: "500".to_string(),

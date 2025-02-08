@@ -1,7 +1,7 @@
+use crate::observing_target_list::PossibleTarget;
 use crate::{
-    observing_target_list, observing_target_list::parse_whats_up_response,
-    observing_target_list::WhatsUpParams, sun_moon_times, sun_moon_times::SunMoonTimesResponse,
-    tui, weather, weather::Forecast,
+    observing_target_list::parse_whats_up_response, observing_target_list::WhatsUpParams,
+    sun_moon_times, sun_moon_times::SunMoonTimesResponse, tui, weather, weather::Forecast,
 };
 use chrono::format::StrftimeItems;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
@@ -11,8 +11,10 @@ use promkit::{
         execute,
         terminal::{disable_raw_mode, Clear, ClearType},
     },
+    preset::listbox::Listbox,
     preset::readline::Readline,
 };
+use regex;
 
 use comfy_table::Table;
 
@@ -192,12 +194,185 @@ pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Creates the observing target list
 pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nObserving Target List\n\n");
-    let data = parse_whats_up_response(&WhatsUpParams::default());
-    println!("{:?}", data);
+    let year: String = Readline::default()
+        .title("Year (YYYY): ")
+        .validator(
+            |x| {
+                let rex = regex::Regex::new(r"^\d{4}$").unwrap();
+                rex.is_match(x)
+            },
+            |x| format!("{} is not a valid year", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let month: String = Readline::default()
+        .title("Month (MM): ")
+        .validator(
+            |x| {
+                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
+                rex.is_match(x)
+            },
+            |x| format!("{} is not a valid month", x),
+        )
+        .validator(
+            |x| {
+                let accepted_values = [
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+                ];
+                accepted_values.contains(&x)
+            },
+            |x| format!("{} is not a valid month", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let day: String = Readline::default()
+        .title("Day (DD): ")
+        .validator(
+            |x| {
+                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
+                rex.is_match(x)
+            },
+            |x| format!("{} is not a valid day", x),
+        )
+        .validator(
+            |x| {
+                let accepted_values = [
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                    "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
+                    "28", "29", "30", "31",
+                ];
+                accepted_values.contains(&x)
+            },
+            |x| format!("{} is not a valid day", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let hour: String = Readline::default()
+        .title("Hour (HH): ")
+        .validator(
+            |x| {
+                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
+                rex.is_match(x)
+            },
+            |x| format!("{} is not a valid day", x),
+        )
+        .validator(
+            |x| {
+                let accepted_values = [
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                    "15", "16", "17", "18", "19", "20", "21", "22", "23",
+                ];
+                accepted_values.contains(&x)
+            },
+            |x| format!("{} is not a valid hour", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let minute: String = Readline::default()
+        .title("Minute (MM): ")
+        .validator(
+            |x| {
+                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
+                rex.is_match(x)
+            },
+            |x| format!("{} is not a valid minute", x),
+        )
+        .validator(
+            |x| {
+                let accepted_values = [
+                    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                    "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
+                    "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                    "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53",
+                    "54", "55", "56", "57", "58", "59",
+                ];
+                accepted_values.contains(&x)
+            },
+            |x| format!("{} is not a valid minute", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let duration: String = Readline::default()
+        .title("Duration in hours (H or HH): ")
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid number", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let max_objects: String = Readline::default()
+        .title("Maximum number of objects: ")
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid number", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let min_alt: String = Readline::default()
+        .title("Minimum Altitude (deg): ")
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid number", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let solar_elong: String = Readline::default()
+        .title("Maximum Solar elongation (deg): ")
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid number", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let lunar_elong: String = Readline::default()
+        .title("Maximum Lunar elongation (deg): ")
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid number", x),
+        )
+        .prompt()
+        .unwrap()
+        .run()?;
+    let object_type: String = Listbox::new(vec!["Asteroid", "NEO", "Comet"])
+        .title("Select object type")
+        .prompt()
+        .unwrap()
+        .run()?;
+    let object_type_code: &str = match object_type {
+        object_type if object_type.as_str() == "Asteroid" => "mp",
+        object_type if object_type.as_str() == "NEO" => "neo",
+        object_type if object_type.as_str() == "Comet" => "cmt",
+        _ => "mp",
+    };
+    let whats_up_params: WhatsUpParams = WhatsUpParams {
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        max_objects,
+        duration,
+        min_alt,
+        solar_elong,
+        lunar_elong,
+        object_type: object_type_code.to_string(),
+    };
+    let data: Vec<PossibleTarget> = parse_whats_up_response(&whats_up_params);
+    create_whats_up_list_table(data);
     let mut p = Readline::default()
         .title("\n9 to go back, 0 to quit:")
         .validator(
@@ -210,4 +385,24 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
         tui::settings_menu()?
     }
     Ok(())
+}
+
+fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
+    let _ = disable_raw_mode();
+    let mut table = Table::new();
+    let coverters: Vec<Box<dyn Fn(&PossibleTarget) -> String>> = vec![
+        Box::new(|item: &PossibleTarget| item.designation.to_string()),
+        Box::new(|item: &PossibleTarget| item.magnitude.to_string()),
+        Box::new(|item: &PossibleTarget| item.ra.to_string()),
+        Box::new(|item: &PossibleTarget| item.dec.to_string()),
+        Box::new(|item: &PossibleTarget| item.altitude.to_string()),
+    ];
+    table
+        .set_width(80)
+        .set_header(vec!["Designation", "Magnitude", "RA", "DEC", "Altitude"]);
+    for item in data {
+        let row: Vec<String> = coverters.iter().map(|converter| converter(&item)).collect();
+        table.add_row(row);
+    }
+    println!("{table}");
 }
