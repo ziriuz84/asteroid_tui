@@ -1,11 +1,12 @@
 use crate::settings::Settings;
+use chrono::{Datelike, Timelike, Utc};
 use percent_encoding::percent_decode_str;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::fmt;
 use std::fmt::Display;
+use std::{fmt, thread::current};
 
 /// Possible target structure
 ///
@@ -44,12 +45,13 @@ pub struct WhatsUpParams {
 
 impl Default for WhatsUpParams {
     fn default() -> Self {
-        let mut params: WhatsUpParams = WhatsUpParams {
-            year: "2025".to_string(),
-            month: "1".to_string(),
-            day: "10".to_string(),
-            minute: "0".to_string(),
-            hour: "0".to_string(),
+        let current_datetime = Utc::now();
+        let params: WhatsUpParams = WhatsUpParams {
+            year: current_datetime.year().to_string(),
+            month: current_datetime.month().to_string(),
+            day: current_datetime.day().to_string(),
+            minute: current_datetime.minute().to_string(),
+            hour: current_datetime.hour().to_string(),
             duration: "1".to_string(),
             max_objects: "10".to_string(),
             min_alt: "10".to_string(),
@@ -116,6 +118,7 @@ pub fn parse_whats_up_response(params: &WhatsUpParams) -> String {
     //let data: Vec<PossibleTarget> =
     //    serde_json::from_str(&get_observing_target_list(params).as_str());
     let data = get_observing_target_list(params);
+    let document = scraper::Html::parse_document(data.as_str());
     println!("{:?}", data);
     data
 }
@@ -130,10 +133,10 @@ mod test {
         assert!(result.contains("Designation"));
     }
 
-    //#[test]
-    //fn test_parse_whats_up_response() {
-    //    let data = parse_whats_up_response(&WhatsUpParams::default());
-    //    println!("{:?}", data.unwrap());
-    //    assert!(parse_whats_up_response(&WhatsUpParams::default()).is_ok());
-    //}
+    #[test]
+    fn test_parse_whats_up_response() {
+        let data = parse_whats_up_response(&WhatsUpParams::default());
+        println!("{:?}", data);
+        assert!(parse_whats_up_response(&WhatsUpParams::default()).contains("table"));
+    }
 }
