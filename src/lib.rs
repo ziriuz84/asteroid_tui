@@ -20,5 +20,8 @@ pub mod weather;
 /// Observing Target List library
 pub mod observing_target_list;
 
+/// General utilities library
+pub mod utils;
+
 /// Tui library
 pub mod tui;
