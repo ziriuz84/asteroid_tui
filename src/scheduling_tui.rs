@@ -382,7 +382,7 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
         .prompt()?;
     let result = p.run()?;
     if result.as_str() == "9" {
-        tui::settings_menu()?
+        scheduling_menu()?
     }
     Ok(())
 }
