@@ -17,5 +17,8 @@ pub mod sun_moon_times;
 /// Weather library
 pub mod weather;
 
+/// Observing Target List library
+pub mod observing_target_list;
+
 /// Tui library
 pub mod tui;

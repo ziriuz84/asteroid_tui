@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IAU Minor Planet Center</title>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/mpc.css">
+  <link rel="stylesheet" type="text/css" href="/stylesheets/table-sorter.css">
+  <meta http-equiv="content-type" content="text/html;charset=UTF-8">
+
+  <link media="all" rel="stylesheet" href="/css/all.css">
+
+  <link rel="icon" type="image/png" href="/iau/figs/MPClogo16.png">
+  <meta name="description" content="We are the official body that deals with
+      astrometric observations and orbits of minor planets (asteroids) and comets.">
+
+  <meta name="keywords" content="astrometry, observations, orbits,
+      minor planets, asteroids, comets, near earth objects, 
+      potentially hazardous asteroids">
+
+  <script type="text/javascript" src="/js/jquery-latest.js"></script>
+<!--  <script type="text/javascript" src="/js/jquery.main.js"></script> -->
+<!--  <script type="text/javascript" src="/js/jquery.metadata.js"></script> -->
+  <script type="text/javascript" src="/js/jquery.tablesorter.js"></script>
+  <script type="text/javascript" src="/js/webtrends.js"></script>
+  <script type="text/javascript" src="/js/track_pdfs.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Arvo:400,700,400italic,700italic|PT+Sans:400,700,400italic,700italic|PT+Sans+Narrow:400,700' rel='stylesheet' type='text/css'>
+
+</head>
+  
+<body>
+  <!-- wrapper -->
+  <div id="wrapper">
+    <div class="w1">
+      <!-- header -->
+      <header id="header">
+        <div class="holder">
+          <!-- logo -->
+          <h1 class="logo"><a href="/">The International Astronomical Union Minor Planet Center</a></h1>
+          <div class="area">
+            <!-- top-nav -->
+            <nav class="top-nav">
+              <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+		<li><a href="/mpcops/contact/">Contact</a></li>
+                <li><a href="https://mpc-service.atlassian.net/servicedesk/customer/portals">Helpdesk</a></li>
+              </ul>
+            </nav>
+            <!-- search-form -->
+            <div class="form-holder">
+              <!-- This commented code opens a new page for the search. -->
+              <!--<form class="search-form" method="get" action="https://www.google.com/search" target="_blank">-->
+              <form class="search-form" method="get" action="https://www.google.com/search">
+                <fieldset>
+                  <!--<label for="search">Search</label>-->
+                  <input type="hidden" name="sitesearch" value="minorplanetcenter.net">
+                  <input type="text" onfocus="if(this.value==this.defaultValue)this.value='';" onblur="if(this.value=='')this.value=this.defaultValue;" id="search" name="q" value="Search MPC">
+                </fieldset>
+              </form>
+            </div>
+            <div class="social-bar">
+<!--              <a href="https://twitter.com/MinorPlanetCtr"><span class="social twitter">L</span></a> -->
+<!--              <a href="https://www.facebook.com/MinorPlanetCenter"><span class="social facebook">F</span></a> -->
+<!--              <a href="https://www.youtube.com/channel/UCtALMOQHuBxh5XMsYNiDhMg"><span class="social youtube">X</span></a> -->
+<!--              <a href="/iau/rss/mpc_feeds.html"><span class="social rss">R</span></a> -->
+            </div>
+          </div>
+        </div>
+        <nav class="nav-holder">
+          <!-- main navigation -->
+          <ul id="nav">
+            <li>
+              <a href="/iau/mpc.html"><span>OBSERVERS</span></a>
+              <ul>
+                <li><a href="/iau/MPEph/MPEph.html">Ephemeris Service</a></li>
+                <li><a href="/mpec/RecentMPECs.html">MPECs</a></li>
+                <li><a href="/iau/NEO/toconfirm_tabular.html">NEO Confirmation</a></li>
+                <li><a href="/iau/NEO/pccp_tabular.html">Possible Comet Confirmation</a></li>
+                <li><a href="/mpcops/submissions/cometary/">Report Cometary Activity</a></li>
+                <li><a href="/db_search">Orbits/Observations Database</a></li>				
+                <li><a href="/iau/Ephemerides/EphemOrbEls.html" class="nested">Orbital Elements</a>
+                  <ul>
+                    <li><a href="/iau/MPCORB.html">MPCORB</a></li>
+                    <li><a href="/iau/ECS/MPCAT/MPCAT.html">MPCAT</a></li>
+                    <li><a href="/iau/ECS/MPCUPDATE/MPCUPDATE.html">MPCUPDATE</a></li>
+                    <li><a href="/iau/Ephemerides/SoftwareEls.html">Orbital Elements for Software</a></li>
+                  </ul>                
+                </li>
+                <li><a href="/iau/services/MPCServices.html">Publications Overview</a></li>
+                <li><a href="/iau/ECS/MPCArchive/MPCArchive_TBL.html">Publications Archive</a></li>              
+                <li><a href="/iau/NEO/TheNEOPage.html" class="nested">NEO Services</a>
+                  <ul>
+                    <li><a href="/iau/NEO/toconfirm_tabular.html">Confirmation</a></li>
+                    <li><a href="/iau/NEO/PossNEO.html">Ratings</a></li>
+                    <li><a href="/cgi-bin/neaobs.cgi">Observation Planning Aid</a></li>
+                    <li><a href="/neocp_followup_report/">NEOCP Followup Report Form</a></li>
+                    <li><a href="/neocp_followup_reports/">NEOCP Followup Reports</a></li>
+                    <li><a href="/neocp_obs">NEOCP Recent Observations</a></li>
+                    <li><a href="/mpcops/neocp/neocp_plots/">NEOCP Plots</a></li>		    
+                    <li><a href="/iau/recovery/recovery.html">NEO Recovery</a></li>
+                  </ul>
+                </li>
+
+                <li><a href="" class="nested">Observations</a>
+                  <ul>
+                    <li><a href="/wamo/">WAMO</a></li>
+                  </ul>
+                </li>
+
+                <li><a href="/mpcops/orbits/" class="nested">Orbits</a>
+                  <ul>
+                    <li><a href="https://data.minorplanetcenter.net/comparison/index.html">Orbit Comparison Tool</a></li>
+                    <li><a href="/mpcops/orbits/no-orbits-astrometry/">Request for archival astrometry</a></li>
+                  </ul>
+                </li>
+
+                <li><a href="/iau/services/WebCSAccess.html" class="nested">Other Observer Services</a>
+                  <ul>
+                    <li><a href="/whatsup">Observing Target List</a></li>
+                    <li><a href="/iau/NatSats/NaturalSatellites.html">Natural Satellite Ephemerides</a></li>
+                    <li><a href="/iau/MPEph/NewObjEphems.html">New Object Ephemerides</a></li>
+                    <li><a href="/cgi-bin/checkmp.cgi">MPChecker</a></li>
+<!-- THIS PAGE IS NO LONGER SUPPORTED   <li><a href="/iau/artsats/artsats.html">Distant Artificial Satellites</a></li> -->
+                    <li><a href="/iau/lists/Customize.html">Observing List Customizer</a></li>
+                    <li><a href="/iau/delays/neocp_delay.html">Processing Times</a></li>		    
+                  </ul>
+                </li>
+		
+		<li><a href="/" class="nested">Identifications</a>
+		  <ul>
+		    <li><a href="/mpcops/documentation/identifications/">Documentation</a></li>		    
+		    <li><a href="/mpcops/documentation/identifications/submission-format/">Submission Format</a></li>
+                    <li><a href="/mpcops/submissions/identifications/">Submit</a></li>
+		  </ul>
+		</li>
+
+                <li><a href="/iau/ECS/MPCAT-OBS/MPCAT-OBS.html">MPCAT-OBS</a></li>
+                <li><a href="/iau/SkyCoverage.html">Sky Coverage</a></li>
+                <li><a href="/iau/MPC_Documentation.html" class="nested">Documentation</a>
+                  <ul>
+                    <li><a href="/iau/info/TechInfo.html">MPC Submission Info</a></li>
+                    <li><a href="/iau/info/Astrometry.html">Astrometry Guide</a></li>
+                    <li><a href="/mpcops/documentation/artificial-satellites/">Artificial Satellites</a></li>
+                    <li><a href="/submit_action_code">Submit Action Code</a></li>		    
+                    <li><a href="/mpcops/documentation/">Other</a></li>		    
+                    <!-- <li><a href="/iau/WhatsNew.html">What's New</a></li> -->
+                  </ul>                
+                </li>
+                <li><a href="/iau/lists/Lists.html" class="nested">Lists and Plots</a>
+                  <ul>
+                    <li><a href="/iau/lists/MPLists.html">Minor Planets</a></li>
+                      <!--<ul>
+                        <li><a href="/iau/lists/t_atens.html">Atens</a></li>
+                        <li><a href="/iau/lists/t_apollos.html">Apollos</a></li>
+                        <li><a href="/iau/lists/t_amors.html">Amors</a></li>
+                        <li><a href="/iau/lists/t_centaurs.html">Centaurs and Scattered Disk Objects</a></li>
+                        <li><a href="/iau/lists/t_tnos.html">Transneptunian Objects</a></li>
+                        <li><a href="/iau/lists/t_others.html">Other Unusual Objects</a></li>
+                        <li><a href="/iau/lists/t_dangerous.html">Potentially Hazardous Asteroids</a></li>
+                      </ul>-->
+                    <li><a href="/iau/lists/CometLists.html">Comets</a></li>
+                      <!--<ul>
+                        <li><a href="/iau/lists/LastCometObs.html">Date of Last Observation</a></li>
+                        <li><a href="/iau/lists/LastYear.html">Designations from the Past Year</a></li>
+                        <li><a href="http://www.icq.eps.harvard.edu/CometMags.html">Comet Magnitude Estimates</a></li>
+                        <li><a href="/iau/lists/ClosestComets.html">Closest Approaches</a></li>
+                        <li><a href="/iau/lists/PeriodicCodes.html">Periodic Comets</a></li>
+                      </ul>-->
+                    <li><a href="/iau/lists/ObsCodesF.html">Observatory Codes</a></li>		    
+                    <li><a href="/iau/Animations/Animations.html">Animations</a></li>
+                  </ul>                
+                </li>
+                <!--<li><a href="/summary">Summary</a></li>-->
+                <li><a href='/mpc/obs_stats_2014_2018'>2014-18 NEO Obs Statistics</a></li>
+                <li><a href='/mpc/summary'>Summary of Latest Data</a></li>
+                <li><a href='/deprecated-pages.html'>Deprecated Webpages</a></li>		
+              </ul>
+            </li>
+            <li><a href="/data"><span>DATA</span></a></li>
+	    
+            <li><a href="/"><span>NEW</span></a>
+	      <ul>
+		<li><a href="/mpcops/new/developments/">Developments</a></li>
+<!--		<li><a href="/mpcops/new/releases/">New Releases</a></li> -->
+		<li><a href="/mpcops/new/existing-upgrades/">Existing Upgrades</a></li>
+		<li><a href="/mpcops/new/newsletters/">Newsletters</a></li>
+	      </ul>
+	    </li>
+	    
+            <li><a href="/iau/MPCStatus.html"><span style="color:Green">STATUS</a></li>
+
+	    <li><a href="/mpcops/documentation/"><span>DOCUMENTATION</span></a>
+
+            <li><a href="/"><span>EXTERNAL</span></a>
+	      <ul id="external">
+	      	<li><a href="https://mpcmug.astro.umd.edu/" target="_blank">MPC User Group (MUG)</a></li>
+		<li><a href="http://iawn.net/" target="_blank">IAWN</a></li>
+		<li><a href="https://sbnmpc.astro.umd.edu/" target="_blank">SBN Annex</a></li>
+		<li><a href="https://www.wgsbn-iau.org/" target="_blank">WGSBN</a></li>
+                <li><a href='http://alcdef.org'>Light Curve Database</a></li>
+	      </ul>
+	    </li>
+	    
+          </ul>
+        </nav>
+      </header>
+
+   <script type="text/javascript">
+          document.addEventListener('DOMContentLoaded', function () {
+            const listItems = document.querySelectorAll('#nav li ');
+            function getDirectTextContent(element) {
+                let directTextContent = '';
+                element.childNodes.forEach(node => {
+                    if (node.textContent.trim().includes('OBSERVERS') || node.textContent.trim().includes('DATA') || node.textContent.trim().includes('NEW') || node.textContent.trim().includes('STATUS') || node.textContent.trim().includes('DOCUMENTATION') || node.textContent.trim().includes('EXTERNAL')){
+                        directTextContent += node.textContent.trim();
+                    }
+                });
+                return directTextContent;
+            }
+
+            listItems.forEach(function (li) {
+                const directText = getDirectTextContent(li);
+                const textLength = directText.length;  
+
+                // Log the length of each item to the console
+                //console.log(`Text: "${li.textContent.trim()}", Length: ${textLength}`);
+
+                // Apply class based on length
+                if (textLength <= 5) {
+                    li.classList.add('short-word');
+                } else if (textLength <= 10) {
+                    li.classList.add('medium-word');
+                } else {
+                    li.classList.add('long-word');
+                }
+            });
+        });
+    </script>
+
+      <!-- main -->
+      <div id="main">
+
+  <h2>Observing Target List</h2>
+
+Use this form to generate a list of the currently brightest asteroids (or, in particular near-Earth asteroids) or comets, visible during a particular time period from a particular location. Latitude and longitude are in degrees: positive latitude for Northern Hemisphere, negative for Southern; positive longitude east of Greenwich, negative west (e.g. for Cambridge Massachusetts USA, latitude is +42.4, longitude is -71.1.)
+
+<form accept-charset="UTF-8" action="/whatsup/index" method="post"><div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" /><input name="authenticity_token" type="hidden" value="6jL1Ruhw/ENf7P8I7VSi5YgwcNKf8+8ps2vvYtjf/Us=" /></div>
+<div style="float: left">
+  <br>
+  <h3>Location</h3>
+  <table>
+    <tr>
+      <td>Latitude</td>
+      <td><input id="latitude" name="latitude" size="8" type="text" value="44.09727" /></td>
+    </tr>
+    <tr>
+      <td>Longitude</td>
+      <td><input id="longitude" name="longitude" size="8" type="text" value="9.7737" /></td>
+    </tr>
+  </table>
+
+  <br>
+  <h3>Observing Time (UTC)</h3>
+  <table>
+    <tr>
+      <td>Year</td>
+      <td><input id="year" name="year" size="4" type="text" value="2025" /></td>
+    </tr>
+    <tr>
+      <td>Month</td>
+      <td><input id="month" name="month" size="4" type="text" value="1" /></td>
+    </tr>
+    <tr>
+      <td>Day</td>
+      <td><input id="day" name="day" size="4" type="text" value="15" /></td>
+    </tr>
+    <tr>
+      <td>Hour</td>
+      <td><input id="hour" name="hour" size="4" type="text" value="0" /></td>
+    </tr>
+    <tr>
+      <td>Minute</td>
+      <td><input id="minute" name="minute" size="4" type="text" value="0" /></td>
+    </tr>
+    <tr>
+      <td>Duration (hours)</td>
+      <td><input id="duration" name="duration" size="4" type="text" value="1" /></td>
+    </tr>
+  </table>
+  <br>
+</div>
+
+<div style="margin-left: 40px; float: left">
+  <br>
+  <br>
+  <table >
+    <tr>
+      <td>Max Objects</td>
+      <td><input id="max_objects" name="max_objects" size="4" type="text" value="10" /></td>
+    </tr>
+    <tr>
+      <td>Minimum Altitude</td>
+      <td><input id="min_alt" name="min_alt" size="4" type="text" value="10" /></td>
+    </tr>
+    <tr>
+      <td>Minimum Solar Elongation</td>
+      <td><input id="solar_elong" name="solar_elong" size="4" type="text" value="0" /></td>
+    </tr>
+    <tr>
+      <td>Minimum Lunar Elongation</td>
+      <td><input id="lunar_elong" name="lunar_elong" size="4" type="text" value="0" /></td>
+    </tr>
+  </table>
+
+  <br>
+  Object Type<br>
+   <input checked="checked" class="middle" id="object_type_mp" name="object_type" type="radio" value="mp" />&nbsp;Asteroids<br>
+   <input class="middle" id="object_type_neo" name="object_type" type="radio" value="neo" />&nbsp;Near Earth Asteroids<br>
+   <input class="middle" id="object_type_cmt" name="object_type" type="radio" value="cmt" />&nbsp;Comets
+
+  <br>
+  <br>
+  <input name="submit" type="submit" value="Submit" />
+  <br>
+  <br>
+  <br>
+</div>
+</form>
+<div style="float: none">
+   <table>
+      <th>Designation</th>
+      <th>Mag</th>
+      <th>Solar Elong</th>
+      <th>Lunar Elong</th>
+      <th>Begin Time</th>
+      <th>Beg RA</th>
+      <th>Beg Dec</th>
+      <th>Beg Alt</th>
+      <th>Max Time</th>
+      <th>Max RA</th>
+      <th>Max Dec</th>
+      <th>Max Alt</th>
+      <th>End Time</th>
+      <th>End RA</th>
+      <th>End Dec</th>
+      <th>End Alt</th>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=15> (15) Eunomia</a></td>
+         <td>9.0</td>
+         <td>141</td>
+         <td>51</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>04 58 06.2</td>
+         <td>+29 30 18</td>
+         <td>48.2</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>04 58 06.2</td>
+         <td>+29 30 18</td>
+         <td>48.2</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>04 58 05.4</td>
+         <td>+29 29 58</td>
+         <td>37.4</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=15> (15) Eunomia</a></td>
+         <td>9.0</td>
+         <td>141</td>
+         <td>51</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>04 58 06.2</td>
+         <td>+29 30 18</td>
+         <td>48.2</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>04 58 06.2</td>
+         <td>+29 30 18</td>
+         <td>48.2</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>04 58 05.4</td>
+         <td>+29 29 58</td>
+         <td>37.4</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=887> (887) Alinda</a></td>
+         <td>9.3</td>
+         <td>170</td>
+         <td>20</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 24 11.8</td>
+         <td>+29 44 49</td>
+         <td>72.1</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 24 11.8</td>
+         <td>+29 44 49</td>
+         <td>72.1</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>07 24 37.6</td>
+         <td>+29 49 17</td>
+         <td>63.4</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=14> (14) Irene</a></td>
+         <td>9.8</td>
+         <td>164</td>
+         <td>28</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>06 44 50.4</td>
+         <td>+28 12 45</td>
+         <td>65.6</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>06 44 50.4</td>
+         <td>+28 12 45</td>
+         <td>65.6</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>06 44 47.7</td>
+         <td>+28 12 57</td>
+         <td>55.6</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=29> (29) Amphitrite</a></td>
+         <td>9.8</td>
+         <td>145</td>
+         <td>22</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>10 16 13.2</td>
+         <td>+17 06 14</td>
+         <td>53.3</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>10 16 11.9</td>
+         <td>+17 06 21</td>
+         <td>60.4</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>10 16 11.9</td>
+         <td>+17 06 21</td>
+         <td>60.4</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=28> (28) Bellona</a></td>
+         <td>10.5</td>
+         <td>159</td>
+         <td>12</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>09 06 40.4</td>
+         <td>+11 42 47</td>
+         <td>56.0</td>
+         <td>2025-01-15T00:50:00Z</td>
+         <td>09 06 39.0</td>
+         <td>+11 43 01</td>
+         <td>57.6</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>09 06 38.7</td>
+         <td>+11 43 04</td>
+         <td>57.5</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=51> (51) Nemausa</a></td>
+         <td>10.6</td>
+         <td>165</td>
+         <td>23</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 33 49.7</td>
+         <td>+06 12 29</td>
+         <td>50.9</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 33 49.7</td>
+         <td>+06 12 29</td>
+         <td>50.9</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>07 33 47.2</td>
+         <td>+06 12 41</td>
+         <td>45.8</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=79> (79) Eurynome</a></td>
+         <td>10.3</td>
+         <td>172</td>
+         <td>19</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 35 39.1</td>
+         <td>+13 09 04</td>
+         <td>57.8</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>07 35 39.1</td>
+         <td>+13 09 04</td>
+         <td>57.8</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>07 35 36.5</td>
+         <td>+13 09 11</td>
+         <td>52.1</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=8> (8) Flora</a></td>
+         <td>10.8</td>
+         <td>114</td>
+         <td>52</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>12 10 04.3</td>
+         <td>+05 10 01</td>
+         <td>26.2</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>12 10 05.2</td>
+         <td>+05 10 05</td>
+         <td>35.9</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>12 10 05.2</td>
+         <td>+05 10 05</td>
+         <td>35.9</td>
+      </tr>
+      <tr>
+         <td><a href=http://minorplanetcenter.net/db_search/show_object?object_id=13> (13) Egeria</a></td>
+         <td>10.9</td>
+         <td>127</td>
+         <td>64</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>03 51 04.5</td>
+         <td>+35 48 33</td>
+         <td>39.6</td>
+         <td>2025-01-15T00:00:00Z</td>
+         <td>03 51 04.5</td>
+         <td>+35 48 33</td>
+         <td>39.6</td>
+         <td>2025-01-15T01:00:00Z</td>
+         <td>03 51 04.2</td>
+         <td>+35 48 31</td>
+         <td>29.4</td>
+      </tr>
+   </table>
+</div>
+
+
+
+
+
+
+
+        </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <footer id="footer">
+    <div class="holder">
+      <nav class="nav">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/about">About</a></li>
+	  <!-- Contact link changed to Jira and name changed to helpdesk.
+	       Should be consistent with top right of banner -->
+          <li><a href="https://mpc-service.atlassian.net/servicedesk/customer/portals">Helpdesk</a></li>
+<!-- PP REMOVED 28 Feb 2023 - does not work MPC does not have one          <li><a href="https://www.cfa.harvard.edu/content/privacy-statement">Privacy</a></li> -->
+        </ul>
+      </nav>
+      
+      <a href="https://www.cfa.harvard.edu">
+      <img src="/images/CfA_Logo_Vertical_CMYK.png" width="110" height="47"></a>
+      <p>
+      <p>
+      <p>
+      <div class="copy">The Minor Planet Center is hosted by the Center for Astrophysics | Harvard &amp; Smithsonian.<center>The Minor Planet Center is funded by NASA.</center></div> 
+  </footer>
+
+<script type="text/javascript">
+  $(window).on('load', (function() {
+    $("table").tablesorter();
+  })); 
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var _tag=new WebTrends();
+_tag.dcsGetId();
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+_tag.dcsCustom=function(){
+// Add custom parameters here.
+//_tag.DCSext.param_name=param_value;
+}
+_tag.dcsCollect();
+//]]>
+</script>
+
+<noscript>
+<div><img alt="DCSIMG" id="DCSIMG" width="1" height="1" src="//logs1.smithsonian.museum/dcsa7yzrmbdzpxzrosrn4tyep_5i1d/njs.gif?dcsuri=/nojavascript&amp;WT.js=No&amp;WT.tv=9.4.0&amp;dcssip=www.minorplanetcenter.net"/></div>
+</noscript>
+</body>
+
+</html>
+
