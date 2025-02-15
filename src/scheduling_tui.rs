@@ -390,7 +390,7 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
 fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
     let _ = disable_raw_mode();
     let mut table = Table::new();
-    let coverters: Vec<Box<dyn Fn(&PossibleTarget) -> String>> = vec![
+    let converters: Vec<Box<dyn Fn(&PossibleTarget) -> String>> = vec![
         Box::new(|item: &PossibleTarget| item.designation.to_string()),
         Box::new(|item: &PossibleTarget| item.magnitude.to_string()),
         Box::new(|item: &PossibleTarget| item.ra.to_string()),
@@ -401,7 +401,10 @@ fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
         .set_width(80)
         .set_header(vec!["Designation", "Magnitude", "RA", "DEC", "Altitude"]);
     for item in data {
-        let row: Vec<String> = coverters.iter().map(|converter| converter(&item)).collect();
+        let row: Vec<String> = converters
+            .iter()
+            .map(|converter| converter(&item))
+            .collect();
         table.add_row(row);
     }
     println!("{table}");
