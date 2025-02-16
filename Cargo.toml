@@ -6,6 +6,7 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
+human-panic = "2.0.2"
 astro = "2.0.0"
 anyhow = "1.0.95"
 config = "0.15.7"
