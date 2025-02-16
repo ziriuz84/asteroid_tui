@@ -1,6 +1,6 @@
 use crate::settings::Settings;
-use astro;
-use chrono::{DateLike, DateTime, TimeLike, TimeZone, Utc};
+//use astro;
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use std::f64::consts::PI;
 
 fn convert_hour_angle_to_radians(ra: String) -> f64 {
@@ -119,14 +119,12 @@ impl JulianDate for DateTime<Utc> {
 
         let b = (y / 400.0).floor() - (y / 100.0).floor();
 
-        let jd = (365.25 * y).floor()
+        (365.25 * y).floor()
             + (30.6001 * (m + 1.0)).floor()
             + day
             + (hour + minute / 60.0 + second / 3600.0) / 24.0
             + 1720996.5
-            + b;
-
-        jd
+            + b
     }
 }
 
@@ -150,7 +148,7 @@ mod test {
     #[test]
     fn test_convert_deg_to_radians() {
         let deg = "12 30 30";
-        let rad = convert_deg_to_radians(deg.to_string());
+        let rad = convert_dec_to_radians(deg.to_string());
         assert!(rad > 0.2183);
         assert!(rad < 0.2184);
     }
