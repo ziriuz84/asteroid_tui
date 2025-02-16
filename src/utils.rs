@@ -1,6 +1,6 @@
 use crate::settings::Settings;
 use astro;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateLike, DateTime, TimeLike, TimeZone, Utc};
 use std::f64::consts::PI;
 
 fn convert_hour_angle_to_radians(ra: String) -> f64 {
@@ -27,16 +27,16 @@ fn convert_hour_angle_to_dec(ra: String) -> f64 {
     let new_min: f64 = splitted_ra[1].parse().unwrap();
     let new_sec: f64 = splitted_ra[2].parse().unwrap();
 
-    ((new_deg * 15.0) + (new_min * 0.25) + (new_sec * (15.0 / 3600.0)))
+    (new_deg * 15.0) + (new_min * 0.25) + (new_sec * (15.0 / 3600.0))
 }
 
 fn convert_dec_to_deg(dec: String) -> f64 {
-    let splitted_ra: Vec<&str> = ra.split(' ').collect();
+    let splitted_ra: Vec<&str> = dec.split(' ').collect();
     let new_deg: f64 = splitted_ra[0].parse().unwrap();
     let new_min: f64 = splitted_ra[1].parse().unwrap();
     let new_sec: f64 = splitted_ra[2].parse().unwrap();
 
-    (new_deg + (new_min / 60.0) + (new_sec / 3600.0))
+    new_deg + (new_min / 60.0) + (new_sec / 3600.0)
 }
 
 fn convert_deg_to_radians(deg: f64) -> f64 {
@@ -53,11 +53,16 @@ struct GeographicCoordinates {
     longitude: f64, // in gradi
 }
 
-fn calculate_altitude(dec_string: String, ra_string: String, time: &DateTime<Utc>) -> f64 {
-    let settings = Settings::new();
+fn calculate_altitude(dec_string: String, ra_string: String, time: DateTime<Utc>) -> f64 {
+    let settings_a = Settings::new();
+    let settings_b = Settings::new();
     let geo_coords: GeographicCoordinates = GeographicCoordinates {
-        latitude: settings.get_latitude(),
-        longitude: settings.get_longitude(),
+        latitude: *settings_a
+            .expect("Error in loading settings")
+            .get_latitude() as f64,
+        longitude: *settings_b
+            .expect("Error in loading settings")
+            .get_longitude() as f64,
     };
     let eq_coords: EquatorialCoordinates = EquatorialCoordinates {
         right_ascension: convert_hour_angle_to_dec(ra_string),
