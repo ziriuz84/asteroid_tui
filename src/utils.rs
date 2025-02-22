@@ -43,60 +43,68 @@ fn convert_deg_to_radians(deg: f64) -> f64 {
     deg * (PI / 180.0)
 }
 
+/// Equatorial Coordinates struct
+/// Represents equatoria coordinates for an object
+///
+/// * `right_ascension`: right ascension in hours
+/// * `declination`: declination in degrees
 pub struct EquatorialCoordinates {
-    pub right_ascension: f64, // in ore
-    pub declination: f64,     // in gradi
+    /// Right Ascension in hours
+    pub right_ascension: f64,
+    /// Declination in degrees
+    pub declination: f64,
 }
 
+/// Geographic Coordinates struct
+/// Represents geographic coordinates of the observer
+///
+/// * `latitude`: latitude in degrees
+/// * `longitude`: longitude in degrees
 pub struct GeographicCoordinates {
-    pub latitude: f64,  // in gradi
-    pub longitude: f64, // in gradi
+    /// Latitude in degrees
+    pub latitude: f64,
+    /// Longitude in degrees
+    pub longitude: f64,
 }
 
+/// Calculates the local sidereal time (LST)
+///
+/// * `datetime`: DateTime<Utc> object
+/// * `longitude`: longitude of the observer in degrees
 pub fn calculate_lst(datetime: &DateTime<Utc>, longitude: f64) -> f64 {
-    // Calcola il numero di giorni giuliani dal 2000-01-01 12:00 UT
     let j2000 = DateTime::parse_from_rfc3339("2000-01-01T12:00:00Z")
         .unwrap()
         .with_timezone(&Utc);
     let days_since_j2000 = (*datetime - j2000).num_days() as f64;
 
-    // Calcola il numero di secoli giuliani dal J2000.0
     let t = days_since_j2000 / 36525.0;
 
-    // Calcola GMST in gradi
-    // Formula semplificata per GMST alle 0h UT
     let gmst_0h =
         100.46061837 + (36000.770053608 * t) + (0.000387933 * t * t) - (t * t * t / 38710000.0);
 
-    // Aggiungi la rotazione della Terra dall'inizio del giorno
     let hours = datetime.hour() as f64;
     let minutes = datetime.minute() as f64;
     let seconds = datetime.second() as f64;
     let day_fraction = (hours + minutes / 60.0 + seconds / 3600.0) * 1.00273790935;
 
-    // Aggiunge 15 gradi per ora di tempo siderale
     let gmst = gmst_0h + (day_fraction * 15.0);
 
-    // Converti GMST in LST aggiungendo la longitudine
     let mut lst = gmst + longitude.to_degrees();
 
-    // Normalizza a 360 gradi
     lst = lst % 360.0;
     if lst < 0.0 {
         lst += 360.0;
     }
 
-    // Converti in radianti
     lst.to_radians()
 }
 
-pub fn calculate_azimuth(
-    ra: f64,  // ascensione retta in radianti
-    dec: f64, // declinazione in radianti
-    time: DateTime<Utc>,
-) -> f64 {
-    // Calcola l'angolo orario
-
+/// Calculates the azimuth of an object
+///
+/// * `ra`: Right ascension in radians
+/// * `dec`: Declination in radians
+/// * `time`: Time in UTC
+pub fn calculate_azimuth(ra: f64, dec: f64, time: DateTime<Utc>) -> f64 {
     let settings_a = Settings::new();
     let settings_b = Settings::new();
     let observer: GeographicCoordinates = GeographicCoordinates {
@@ -109,7 +117,6 @@ pub fn calculate_azimuth(
     };
     let lst = calculate_lst(&time, observer.longitude);
     let ha = lst - ra;
-    // Calcola i seni e coseni necessari
     let sin_lat = observer.latitude.sin();
     let cos_lat = observer.latitude.cos();
     let sin_dec = dec.sin();
@@ -117,20 +124,16 @@ pub fn calculate_azimuth(
     let sin_ha = ha.sin();
     let cos_ha = ha.cos();
 
-    // Calcola l'altezza
     let sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_ha;
     let alt = sin_alt.asin();
 
-    // Calcola l'azimut
     let cos_az = (sin_dec - sin_lat * sin_alt) / (cos_lat * alt.cos());
     let mut az = cos_az.acos();
 
-    // Correggi il quadrante dell'azimut
     if sin_ha > 0.0 {
         az = 2.0 * PI - az;
     }
 
-    // Normalizza l'azimut tra 0 e 2π
     az %= 2.0 * PI;
     if az < 0.0 {
         az += 2.0 * PI;
@@ -139,6 +142,11 @@ pub fn calculate_azimuth(
     az
 }
 
+/// Calculates the altitude of an object
+///
+/// * `dec_string`: Declination as a string (DD MM SS)
+/// * `ra_string`: Right ascension as a string (HH MM SS)
+/// * `time`: Time in UTC
 pub fn calculate_altitude(dec_string: String, ra_string: String, time: DateTime<Utc>) -> f64 {
     let settings_a = Settings::new();
     let settings_b = Settings::new();
@@ -154,36 +162,30 @@ pub fn calculate_altitude(dec_string: String, ra_string: String, time: DateTime<
         right_ascension: convert_hour_angle_to_dec(ra_string),
         declination: convert_dec_to_deg(dec_string),
     };
-    // Converti ascensione retta da ore a gradi
     let ra_degrees = eq_coords.right_ascension * 15.0;
 
-    // Converti tutto in radianti
     let ra = ra_degrees * PI / 180.0;
     let dec = eq_coords.declination * PI / 180.0;
     let lat = geo_coords.latitude * PI / 180.0;
 
-    // Calcola l'angolo orario locale
     let julian_day = time.to_julian_date();
     let gmst = calculate_gmst(julian_day);
     let lst = gmst + geo_coords.longitude / 15.0;
     let ha = lst * 15.0 * PI / 180.0 - ra;
 
-    // Formula per calcolare l'altezza
     let sin_alt = (dec.sin() * lat.sin()) + (dec.cos() * lat.cos() * ha.cos());
 
-    // Converti il risultato in gradi
-    let altitude = sin_alt.asin() * 180.0 / PI;
-
-    altitude
+    sin_alt.asin() * 180.0 / PI
 }
 
+/// Calculates the Greenwich Mean Sidereal Time
+///
+/// * `jd`: Julian day
 pub fn calculate_gmst(jd: f64) -> f64 {
-    // Calcolo semplificato del Greenwich Mean Sidereal Time
     let t = (jd - 2451545.0) / 36525.0;
     let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * t * t
         - t * t * t / 38710000.0;
 
-    // Normalizza tra 0 e 360 gradi
     gmst % 360.0 / 15.0
 }
 
@@ -310,6 +312,7 @@ mod test {
 
         let lst1 = calculate_lst(&datetime1, longitude);
         let lst2 = calculate_lst(&datetime2, longitude);
+        println!("lst1: {}, lst2: {}", lst1, lst2);
 
         let mut diff = lst2 - lst1;
         if diff < 0.0 {
@@ -317,7 +320,7 @@ mod test {
         }
 
         // La differenza dovrebbe essere circa 361°
-        assert_close(diff, 361.0_f64.to_radians());
+        assert_close(diff, 1.0_f64.to_radians());
     }
 
     #[test]
@@ -329,5 +332,92 @@ mod test {
         let lst = calculate_lst(&datetime, longitude);
 
         assert!(lst >= 0.0 && lst < 2.0 * PI);
+    }
+
+    #[test]
+    fn test_known_star_position() {
+        // Test con Vega (α Lyrae) per una data specifica
+        let ra: f64 = (18.0 + 37. / 60.0 + 47.6 / 3600.0) * 15.0_f64.to_radians(); // 18h 36m 56.3s
+        let dec: f64 = ((38.0 + 48.0 / 60.0 + 20.4 / 3600.0) as f64).to_radians(); // +38° 47' 01"
+        let time = Utc.ymd(2024, 7, 1).and_hms(22, 0, 0); // 1 Luglio 2024, 22:00 UT
+
+        let az = calculate_azimuth(ra, dec, time);
+        println!("Azimuth for Vega: {} {}", az, az.to_degrees());
+        println!("Expected: {}", 66.4794_f64.to_radians());
+
+        // Valore pre-calcolato per Milano in quella data e ora
+        let expected_az = 66.4794_f64.to_radians(); // Sostituire con il valore corretto
+        assert_close(az, expected_az);
+    }
+
+    #[test]
+    fn test_celestial_pole() {
+        // Test con un oggetto al polo nord celeste
+        let ra = 0.0; // RA non influisce per oggetti al polo
+        let dec = PI / 2.0; // +90 gradi
+        let time = Utc::now();
+
+        let az = calculate_azimuth(ra, dec, time);
+
+        // L'azimut dovrebbe essere 0 (nord) per un oggetto al polo
+        assert_close(az, 0.0);
+    }
+
+    #[test]
+    fn test_normalization_2() {
+        // Test che l'azimut sia sempre tra 0 e 2π
+        let ra = 12.0 * 15.0_f64.to_radians(); // 12h RA
+        let dec = 0.0; // 0° Dec
+        let time = Utc::now();
+
+        let az = calculate_azimuth(ra, dec, time);
+
+        assert!(az >= 0.0 && az < 2.0 * PI);
+    }
+
+    #[test]
+    fn test_meridian_crossing() {
+        // Test di un oggetto che attraversa il meridiano
+        let time = Utc::now();
+        let lst = calculate_lst(&time, 9.0_f64.to_radians()); // Milano longitude
+        let ra = lst; // Oggetto sul meridiano
+        let dec = 45.0_f64.to_radians(); // Declinazione uguale alla latitudine di Milano
+
+        let az = calculate_azimuth(ra, dec, time);
+
+        // L'oggetto dovrebbe essere esattamente a sud (180°)
+        assert_close(az, PI);
+    }
+
+    #[test]
+    fn test_different_declinations() {
+        // Test con diverse declinazioni per la stessa RA
+        let ra = 0.0;
+        let time = Utc::now();
+
+        let az1 = calculate_azimuth(ra, 30.0_f64.to_radians(), time);
+        let az2 = calculate_azimuth(ra, -30.0_f64.to_radians(), time);
+
+        // L'oggetto nell'emisfero sud dovrebbe avere un azimut maggiore
+        assert!(az2 > az1);
+    }
+
+    #[test]
+    fn test_east_west() {
+        // Test di oggetti a est e ovest
+        let time = Utc::now();
+        let lst = calculate_lst(&time, 9.0_f64.to_radians());
+
+        // Oggetto 6h prima del meridiano (est)
+        let ra_east = lst + 6.0 * 15.0_f64.to_radians();
+        let az_east = calculate_azimuth(ra_east, 0.0, time);
+
+        // Oggetto 6h dopo il meridiano (ovest)
+        let ra_west = lst - 6.0 * 15.0_f64.to_radians();
+        let az_west = calculate_azimuth(ra_west, 0.0, time);
+
+        // L'oggetto a est dovrebbe avere azimut < 180°, quello a ovest > 180°
+        assert!(az_east < PI);
+        assert!(az_west > PI);
     }
 }
