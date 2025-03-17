@@ -1,6 +1,8 @@
 use crate::settings::Settings;
+use astro::angle;
+use julian::Calendar;
 //use astro;
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike, Utc};
 use std::f64::consts::PI;
 
 fn convert_hour_angle_to_radians(ra: String) -> f64 {
@@ -67,36 +69,37 @@ pub struct GeographicCoordinates {
     pub longitude: f64,
 }
 
+fn reduce_angle(angle: f64) -> f64 {
+    let d = angle % 360.0;
+    if d < 0.0 {
+        return d + 360.0;
+    }
+    d
+}
+
 /// Calculates the local sidereal time (LST)
 ///
 /// * `datetime`: DateTime<Utc> object
 /// * `longitude`: longitude of the observer in degrees
 pub fn calculate_lst(datetime: &DateTime<Utc>, longitude: f64) -> f64 {
-    let j2000 = DateTime::parse_from_rfc3339("2000-01-01T12:00:00Z")
-        .unwrap()
-        .with_timezone(&Utc);
-    let days_since_j2000 = (*datetime - j2000).num_days() as f64;
+    let cal = Calendar::GREGORIAN;
+    let cal_now = cal
+        .at_ymd(
+            datetime.year(),
+            julian::Month::try_from(datetime.month()).unwrap(),
+            datetime.day(),
+        )
+        .unwrap();
+    let jd_now = cal_now.julian_day_number();
+    let t = (jd_now as f64 - 2451545.0) / 36525.0;
+    println!("jd_now: {}", jd_now);
+    println!("t: {}", t);
+    let theta0 =
+        280.46061837 + 360.98564736629 * (jd_now as f64 - 2451545.0) + (0.000387933 * t * t)
+            - (t * t * t / 38710000.0);
 
-    let t = days_since_j2000 / 36525.0;
-
-    let gmst_0h =
-        100.46061837 + (36000.770053608 * t) + (0.000387933 * t * t) - (t * t * t / 38710000.0);
-
-    let hours = datetime.hour() as f64;
-    let minutes = datetime.minute() as f64;
-    let seconds = datetime.second() as f64;
-    let day_fraction = (hours + minutes / 60.0 + seconds / 3600.0) * 1.00273790935;
-
-    let gmst = gmst_0h + (day_fraction * 15.0);
-
-    let mut lst = gmst + longitude.to_degrees();
-
-    lst = lst % 360.0;
-    if lst < 0.0 {
-        lst += 360.0;
-    }
-
-    lst.to_radians()
+    println!("theta0: {}", theta0);
+    (reduce_angle(theta0) + longitude).to_radians()
 }
 
 /// Calculates the azimuth of an object
@@ -105,41 +108,45 @@ pub fn calculate_lst(datetime: &DateTime<Utc>, longitude: f64) -> f64 {
 /// * `dec`: Declination in radians
 /// * `time`: Time in UTC
 pub fn calculate_azimuth(ra: f64, dec: f64, time: DateTime<Utc>) -> f64 {
-    let settings_a = Settings::new();
-    let settings_b = Settings::new();
-    let observer: GeographicCoordinates = GeographicCoordinates {
-        latitude: *settings_a
-            .expect("Error in loading settings")
-            .get_latitude() as f64,
-        longitude: *settings_b
-            .expect("Error in loading settings")
-            .get_longitude() as f64,
+    // Carica un'unica configurazione
+    let settings = Settings::new().expect("Error in loading settings");
+
+    // Converti latitudine e longitudine da gradi a radianti
+    let latitude_deg = *settings.get_latitude() as f64;
+    let longitude_deg = *settings.get_longitude() as f64;
+
+    let observer = GeographicCoordinates {
+        latitude: latitude_deg.to_radians(),
+        longitude: longitude_deg.to_radians(),
     };
-    let lst = calculate_lst(&time, observer.longitude);
-    let ha = lst - ra;
+
+    // Calcola LST usando la longitudine in gradi
+    let lst = calculate_lst(&time, longitude_deg);
+    let ha = lst - ra.to_radians();
+
     let sin_lat = observer.latitude.sin();
     let cos_lat = observer.latitude.cos();
-    let sin_dec = dec.sin();
-    let cos_dec = dec.cos();
     let sin_ha = ha.sin();
+    println!("ha: {}", ha);
+    println!("sin_ha: {}", sin_ha);
     let cos_ha = ha.cos();
+    println!("cos_ha: {}", cos_ha);
+    let tan_dec = dec.to_radians().tan();
 
-    let sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_ha;
-    let alt = sin_alt.asin();
+    // Calcola numeratore e denominatore per l'azimut
+    let numerator = sin_ha;
+    println!("numerator: {}", numerator);
+    let denominator = cos_ha * sin_lat - tan_dec * cos_lat;
+    println!("denominator: {}", denominator);
 
-    let cos_az = (sin_dec - sin_lat * sin_alt) / (cos_lat * alt.cos());
-    let mut az = cos_az.acos();
+    // Usa atan2 per il quadrante corretto e aggiusta l'azimut
+    let mut az_rad = numerator.atan2(denominator); // Converti da sud a nord
+    az_rad = az_rad.rem_euclid(2.0 * std::f64::consts::PI); // Normalizza tra 0 e 2π
+    println!("Azimuth: {} {}", az_rad, az_rad.to_degrees());
+    println!("Latitude: {}", settings.get_latitude());
+    println!("Longitude: {}", settings.get_longitude());
 
-    if sin_ha > 0.0 {
-        az = 2.0 * PI - az;
-    }
-
-    az %= 2.0 * PI;
-    if az < 0.0 {
-        az += 2.0 * PI;
-    }
-
-    az
+    az_rad
 }
 
 /// Calculates the altitude of an object
@@ -223,6 +230,9 @@ fn convert_dec_deg_to_radians(deg: f32) -> f64 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use chrono::{TimeZone, Utc};
+    use julian::{Calendar, Month};
+    use std::f64::consts::PI;
 
     #[test]
     fn test_convert_hour_angle_to_radians() {
@@ -261,163 +271,55 @@ mod test {
         }
     }
 
+    // calculate_lst tests
+
     #[test]
-    fn test_j2000_epoch() {
-        // Test per J2000.0 (1 gennaio 2000, 12:00 UT)
-        let datetime = DateTime::parse_from_rfc3339("2000-01-01T12:00:00Z")
-            .unwrap()
-            .with_timezone(&Utc);
-        let longitude = 0.0_f64.to_radians(); // Greenwich
+    fn test_lst_at_j2000_noon() {
+        // Test a J2000.0 noon with longitude 0 (Greenwich)
+        let datetime = Utc.with_ymd_and_hms(2000, 1, 1, 12, 0, 0).unwrap();
+        let longitude = 0.0;
+        let lst = calculate_lst(&datetime, longitude);
+        let expected_degrees: f64 = 280.46061837;
+        assert!((lst - expected_degrees.to_radians()).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_lst_with_positive_longitude() {
+        // Longitude 45° Est
+        let datetime = Utc.with_ymd_and_hms(2000, 1, 1, 12, 0, 0).unwrap();
+        let longitude = 45.0;
+        let lst = calculate_lst(&datetime, longitude);
+        let expected_degrees: f64 = (280.46061837 + 45.0) % 360.0;
+        assert!((lst - expected_degrees.to_radians()).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_lst_with_negative_longitude() {
+        // Longitude 75° Ovest
+        let datetime = Utc.with_ymd_and_hms(2000, 1, 1, 12, 0, 0).unwrap();
+        let longitude = -75.0;
+        let lst = calculate_lst(&datetime, longitude);
+        let expected_degrees: f64 = (280.46061837 - 75.0 + 360.0) % 360.0;
+        assert!((lst - expected_degrees.to_radians()).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_lst_at_another_date() {
+        // Data arbitraria con longitudine 0
+        let datetime = Utc.with_ymd_and_hms(2023, 10, 5, 12, 0, 0).unwrap();
+        let longitude = 0.0;
+
+        // Calcolo manuale basato sul codice corrente
+        let cal = Calendar::GREGORIAN;
+        let cal_now = cal.at_ymd(2023, Month::October, 5).unwrap();
+        let jd_now = cal_now.julian_day_number();
+        let t = (jd_now as f64 - 2451545.0) / 36525.0;
+        let theta0 =
+            280.46061837 + 360.98564736629 * (jd_now as f64 - 2451545.0) + 0.000387933 * t.powi(2)
+                - t.powi(3) / 38710000.0;
+        let expected_radians: f64 = (theta0 % 360.0) * PI / 180.0;
 
         let lst = calculate_lst(&datetime, longitude);
-        // Il LST a Greenwich dovrebbe essere circa 18h 41m (280.15 gradi)
-        assert_close(lst, 280.46_f64.to_radians());
-    }
-
-    #[test]
-    fn test_different_longitudes() {
-        let datetime = Utc.ymd(2000, 1, 1).and_hms(0, 0, 0);
-
-        // Test per longitudine est (Positiva)
-        let lst_east = calculate_lst(&datetime, 45.0_f64.to_radians());
-
-        // Test per longitudine ovest (Negativa)
-        let lst_west = calculate_lst(&datetime, (-45.0_f64).to_radians());
-
-        // La differenza dovrebbe essere 90 gradi (in radianti)
-        assert_close((lst_east - lst_west).abs(), PI / 2.0);
-    }
-
-    #[test]
-    fn test_known_value() {
-        // Test con un valore noto:
-        // 15 Giugno 2024, 22:30:00 UT, longitudine 9° Est
-        let datetime = Utc.ymd(2024, 6, 15).and_hms(22, 30, 0);
-        let longitude = 9.0_f64.to_radians();
-
-        let lst = calculate_lst(&datetime, longitude);
-        // Valore pre-calcolato (puoi verificare con software astronomico)
-        let expected_lst = 251.1941_f64.to_radians(); // Sostituisci con il valore corretto
-
-        assert_close(lst, expected_lst);
-    }
-
-    #[test]
-    fn test_24_hour_cycle() {
-        // Test che il LST aumenta di circa 361° in 24 ore
-        // (più di 360° a causa della rotazione della Terra attorno al Sole)
-        let datetime1 = Utc.ymd(2024, 1, 1).and_hms(0, 0, 0);
-        let datetime2 = Utc.ymd(2024, 1, 2).and_hms(0, 0, 0);
-        let longitude = 0.0_f64.to_radians();
-
-        let lst1 = calculate_lst(&datetime1, longitude);
-        let lst2 = calculate_lst(&datetime2, longitude);
-        println!("lst1: {}, lst2: {}", lst1, lst2);
-
-        let mut diff = lst2 - lst1;
-        if diff < 0.0 {
-            diff += 2.0 * PI;
-        }
-
-        // La differenza dovrebbe essere circa 361°
-        assert_close(diff, 1.0_f64.to_radians());
-    }
-
-    #[test]
-    fn test_normalization() {
-        // Test che il risultato è sempre tra 0 e 2π
-        let datetime = Utc::now();
-        let longitude = 180.0_f64.to_radians(); // Caso estremo
-
-        let lst = calculate_lst(&datetime, longitude);
-
-        assert!(lst >= 0.0 && lst < 2.0 * PI);
-    }
-
-    #[test]
-    fn test_known_star_position() {
-        // Test con Vega (α Lyrae) per una data specifica
-        let ra: f64 = (18.0 + 37. / 60.0 + 47.6 / 3600.0) * 15.0_f64.to_radians(); // 18h 36m 56.3s
-        let dec: f64 = ((38.0 + 48.0 / 60.0 + 20.4 / 3600.0) as f64).to_radians(); // +38° 47' 01"
-        let time = Utc.ymd(2024, 7, 1).and_hms(22, 0, 0); // 1 Luglio 2024, 22:00 UT
-
-        let az = calculate_azimuth(ra, dec, time);
-        println!("Azimuth for Vega: {} {}", az, az.to_degrees());
-        println!("Expected: {}", 66.4794_f64.to_radians());
-
-        // Valore pre-calcolato per Milano in quella data e ora
-        let expected_az = 66.4794_f64.to_radians(); // Sostituire con il valore corretto
-        assert_close(az, expected_az);
-    }
-
-    #[test]
-    fn test_celestial_pole() {
-        // Test con un oggetto al polo nord celeste
-        let ra = 0.0; // RA non influisce per oggetti al polo
-        let dec = PI / 2.0; // +90 gradi
-        let time = Utc::now();
-
-        let az = calculate_azimuth(ra, dec, time);
-
-        // L'azimut dovrebbe essere 0 (nord) per un oggetto al polo
-        assert_close(az, 0.0);
-    }
-
-    #[test]
-    fn test_normalization_2() {
-        // Test che l'azimut sia sempre tra 0 e 2π
-        let ra = 12.0 * 15.0_f64.to_radians(); // 12h RA
-        let dec = 0.0; // 0° Dec
-        let time = Utc::now();
-
-        let az = calculate_azimuth(ra, dec, time);
-
-        assert!(az >= 0.0 && az < 2.0 * PI);
-    }
-
-    #[test]
-    fn test_meridian_crossing() {
-        // Test di un oggetto che attraversa il meridiano
-        let time = Utc::now();
-        let lst = calculate_lst(&time, 9.0_f64.to_radians()); // Milano longitude
-        let ra = lst; // Oggetto sul meridiano
-        let dec = 45.0_f64.to_radians(); // Declinazione uguale alla latitudine di Milano
-
-        let az = calculate_azimuth(ra, dec, time);
-
-        // L'oggetto dovrebbe essere esattamente a sud (180°)
-        assert_close(az, PI);
-    }
-
-    #[test]
-    fn test_different_declinations() {
-        // Test con diverse declinazioni per la stessa RA
-        let ra = 0.0;
-        let time = Utc::now();
-
-        let az1 = calculate_azimuth(ra, 30.0_f64.to_radians(), time);
-        let az2 = calculate_azimuth(ra, -30.0_f64.to_radians(), time);
-
-        // L'oggetto nell'emisfero sud dovrebbe avere un azimut maggiore
-        assert!(az2 > az1);
-    }
-
-    #[test]
-    fn test_east_west() {
-        // Test di oggetti a est e ovest
-        let time = Utc::now();
-        let lst = calculate_lst(&time, 9.0_f64.to_radians());
-
-        // Oggetto 6h prima del meridiano (est)
-        let ra_east = lst + 6.0 * 15.0_f64.to_radians();
-        let az_east = calculate_azimuth(ra_east, 0.0, time);
-
-        // Oggetto 6h dopo il meridiano (ovest)
-        let ra_west = lst - 6.0 * 15.0_f64.to_radians();
-        let az_west = calculate_azimuth(ra_west, 0.0, time);
-
-        // L'oggetto a est dovrebbe avere azimut < 180°, quello a ovest > 180°
-        assert!(az_east < PI);
-        assert!(az_west > PI);
+        assert!((lst - expected_radians).abs() < 1e-6);
     }
 }

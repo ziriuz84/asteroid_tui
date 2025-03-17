@@ -369,6 +369,14 @@ impl Settings {
     pub fn get_all_settings(&self) -> Settings {
         self.clone()
     }
+
+    pub fn set_latitude(&mut self, latitude: f32) {
+        self.observatory.latitude = latitude;
+    }
+
+    pub fn set_longitude(&mut self, longitude: f32) {
+        self.observatory.longitude = longitude;
+    }
 }
 
 #[cfg(test)]
