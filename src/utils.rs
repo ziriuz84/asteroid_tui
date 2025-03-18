@@ -322,4 +322,13 @@ mod test {
         let lst = calculate_lst(&datetime, longitude);
         assert!((lst - expected_radians).abs() < 1e-6);
     }
+
+    #[test]
+    fn test_calculate_azimuth() {
+        let ra = 12.0;
+        let dec = 30.0;
+        let time = Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap();
+        let azimuth = calculate_azimuth(ra, dec, time);
+        assert_close(azimuth, 5.2404);
+    }
 }
