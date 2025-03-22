@@ -108,6 +108,8 @@ pub fn calculate_lst(datetime: &DateTime<Utc>, longitude: f64) -> f64 {
 /// * `dec`: Declination in radians
 /// * `time`: Time in UTC
 pub fn calculate_azimuth(ra: f64, dec: f64, time: DateTime<Utc>) -> f64 {
+    println!("ra: {}", ra);
+    println!("dec: {}", dec);
     // Carica un'unica configurazione
     let settings = Settings::new().expect("Error in loading settings");
 
@@ -325,8 +327,8 @@ mod test {
 
     #[test]
     fn test_calculate_azimuth() {
-        let ra = 12.0;
-        let dec = 30.0;
+        let ra = 0.0;
+        let dec = 0.0;
         let time = Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap();
         let azimuth = calculate_azimuth(ra, dec, time);
         assert_close(azimuth, 5.2404);
