@@ -1,5 +1,8 @@
+//! # Utils
+//!
+//! Library for general utilities
+
 use crate::settings::Settings;
-use julian::Calendar;
 //use astro;
 use astronav::{
     coords::{dms_to_deg, hms_to_deg, star::AltAzBuilder},
@@ -48,6 +51,11 @@ fn convert_deg_to_radians(deg: f64) -> f64 {
     deg * (PI / 180.0)
 }
 
+/// Function to check if an object is visible
+///
+/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
+/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
+/// * `date`: date of observation
 pub fn is_visible(ra: &str, dec: &str, date: DateTime<Utc>) -> bool {
     let settings = Settings::new().unwrap();
     let longitude = *settings.get_longitude();
