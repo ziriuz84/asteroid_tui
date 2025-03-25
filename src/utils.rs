@@ -78,8 +78,6 @@ pub fn is_visible(ra: &str, dec: &str, date: DateTime<Utc>) -> bool {
         .build();
     let altitude = alt.get_altitude();
     let azimuth = alt.get_azimuth();
-    println!("Altitude: {}", altitude);
-    println!("Azimuth: {}", azimuth);
     if !(45.0..=315.0).contains(&azimuth) && altitude > *settings.get_north_altitude() as f64 {
         return true;
     };
