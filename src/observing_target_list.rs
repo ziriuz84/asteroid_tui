@@ -9,6 +9,42 @@ use serde::{Deserialize, Serialize};
 //use std::fmt::Display;
 //use std::{fmt, thread::current};
 
+/// Indices of table columns from whatsup.html:
+pub mod table_indices {
+    /// Object designation
+    pub const DESIGNATION: usize = 0;
+    /// Object magnitude
+    pub const MAGNITUDE: usize = 1;
+    /// Solar elongation
+    pub const SOLAR_ELONG: usize = 2;
+    /// Lunar elongation
+    pub const LUNAR_ELONG: usize = 3;
+    /// Begin time
+    pub const BEGIN_TIME: usize = 4;
+    /// Begin right ascension
+    pub const BEG_RA: usize = 5;
+    /// Begin declination
+    pub const BEG_DEC: usize = 6;
+    /// Begin altitude
+    pub const BEG_ALT: usize = 7;
+    /// Maximum time
+    pub const MAX_TIME: usize = 8;
+    /// Maximum right ascension
+    pub const MAX_RA: usize = 9;
+    /// Maximum declination
+    pub const MAX_DEC: usize = 10;
+    /// Maximum altitude
+    pub const MAX_ALT: usize = 11;
+    /// End time
+    pub const END_TIME: usize = 12;
+    /// End right ascension
+    pub const END_RA: usize = 13;
+    /// End declination
+    pub const END_DEC: usize = 14;
+    /// End altitude
+    pub const END_ALT: usize = 15;
+}
+
 /// Possible target structure
 ///
 /// * `designation`: Object designation
@@ -180,25 +216,25 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
     let designation_selector =
         scraper::Selector::parse("a").map_err(|e| anyhow!("Failed to parse selector: {}", e))?;
 
-    let designation = item[0]
+    let designation = item[table_indices::DESIGNATION]
         .select(&designation_selector)
         .next()
         .ok_or_else(|| anyhow!("Designation element not found"))?;
 
     possible_target.designation = designation.inner_html();
 
-    possible_target.magnitude = item[2]
+    possible_target.magnitude = item[table_indices::MAGNITUDE]
         .inner_html()
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse magnitude: {}", e))?;
 
-    possible_target.altitude = item[7]
+    possible_target.altitude = item[table_indices::BEG_ALT]
         .inner_html()
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse altitude: {}", e))?;
 
-    possible_target.ra = item[5].inner_html();
-    possible_target.dec = item[6].inner_html();
+    possible_target.ra = item[table_indices::BEG_RA].inner_html();
+    possible_target.dec = item[table_indices::BEG_DEC].inner_html();
 
     Ok(possible_target)
 }
