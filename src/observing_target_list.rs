@@ -198,25 +198,25 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
     let designation_selector =
         scraper::Selector::parse("a").map_err(|e| anyhow!("Failed to parse selector: {}", e))?;
 
-    let designation = item[0]
+    let designation = item[DESIGNATION]
         .select(&designation_selector)
         .next()
         .ok_or_else(|| anyhow!("Designation element not found"))?;
 
     possible_target.designation = designation.inner_html();
 
-    possible_target.magnitude = item[2]
+    possible_target.magnitude = item[MAGNITUDE]
         .inner_html()
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse magnitude: {}", e))?;
 
-    possible_target.altitude = item[7]
+    possible_target.altitude = item[BEG_ALT]
         .inner_html()
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse altitude: {}", e))?;
 
-    possible_target.ra = item[5].inner_html();
-    possible_target.dec = item[6].inner_html();
+    possible_target.ra = item[BEG_RA].inner_html();
+    possible_target.dec = item[BEG_DEC].inner_html();
 
     Ok(possible_target)
 }
