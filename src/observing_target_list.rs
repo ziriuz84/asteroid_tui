@@ -9,6 +9,24 @@ use serde::{Deserialize, Serialize};
 //use std::fmt::Display;
 //use std::{fmt, thread::current};
 
+/// Taken from whatsup.html
+pub const DESIGNATION: usize = 0;
+pub const MAGNITUDE: usize = 1;
+pub const SOLAR_ELONG: usize = 2;
+pub const LUNAR_ELONG: usize = 3;
+pub const BEGIN_TIME: usize = 4;
+pub const BEG_RA: usize = 5;
+pub const BEG_DEC: usize = 6;
+pub const BEG_ALT: usize = 7;
+pub const MAX_TIME: usize = 8;
+pub const MAX_RA: usize = 9;
+pub const MAX_DEC: usize = 10;
+pub const MAX_ALT: usize = 11;
+pub const END_TIME: usize = 12;
+pub const END_RA: usize = 13;
+pub const END_DEC: usize = 14;
+pub const END_ALT: usize = 15;
+
 /// Possible target structure
 ///
 /// * `designation`: Object designation
