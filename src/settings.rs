@@ -66,22 +66,38 @@ pub struct Settings {
 
 /// Creates default settings for file creation
 fn default_settings() -> Settings {
+    let test = false; // true if you want to test
     let mut rng = rand::rng();
     let default_general: General = General {
         lang: "en".to_string(),
     };
-    let default_observatory: Observatory = Observatory {
-        place: "default".to_string(),
-        latitude: rng.random_range(0.1..89.9) as f32,
-        longitude: rng.random_range(0.1..179.9) as f32,
-        altitude: rng.random_range(0.1..100.0) as f32,
-        observatory_name: "default".to_string(),
-        observer_name: "default".to_string(),
-        mpc_code: "500".to_string(),
-        north_altitude: 1,
-        east_altitude: 1,
-        south_altitude: 1,
-        west_altitude: 1,
+    let default_observatory: Observatory = match test {
+        false => Observatory {
+            place: "default".to_string(),
+            latitude: rng.random_range(0.1..89.9) as f32,
+            longitude: rng.random_range(0.1..179.9) as f32,
+            altitude: rng.random_range(0.1..100.0) as f32,
+            observatory_name: "default".to_string(),
+            observer_name: "default".to_string(),
+            mpc_code: "500".to_string(),
+            north_altitude: 30,
+            east_altitude: 45,
+            south_altitude: 20,
+            west_altitude: 70,
+        },
+        true => Observatory {
+            place: "default".to_string(),
+            latitude: 0.0,  // rng.random_range(0.1..89.9) as f32,
+            longitude: 0.0, // rng.random_range(0.1..179.9) as f32,
+            altitude: 0.0,  // rng.random_range(0.1..100.0) as f32,
+            observatory_name: "default".to_string(),
+            observer_name: "default".to_string(),
+            mpc_code: "500".to_string(),
+            north_altitude: 30,
+            east_altitude: 45,
+            south_altitude: 20,
+            west_altitude: 70,
+        },
     };
     Settings {
         general: default_general,
@@ -344,6 +360,20 @@ impl Settings {
     /// Gets all settings in one
     pub fn get_all_settings(&self) -> Settings {
         self.clone()
+    }
+
+    /// Sets latitude value in config.toml
+    ///
+    /// * `latitude`: latitude to be set
+    pub fn set_latitude(&mut self, latitude: f32) {
+        self.observatory.latitude = latitude;
+    }
+
+    /// Sets longitude value in config.toml
+    ///
+    /// * `longitude`: longitude to be set
+    pub fn set_longitude(&mut self, longitude: f32) {
+        self.observatory.longitude = longitude;
     }
 }
 

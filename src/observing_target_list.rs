@@ -1,6 +1,6 @@
-use crate::settings::Settings;
+use crate::{settings::Settings, utils::is_visible};
 use anyhow::{anyhow, Result};
-use chrono::{Datelike, Timelike, Utc};
+use chrono::{Datelike, TimeZone, Timelike, Utc};
 use percent_encoding::percent_decode_str;
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -200,7 +200,25 @@ pub fn parse_whats_up_response(params: &WhatsUpParams) -> Vec<PossibleTarget> {
     let rows: Vec<scraper::ElementRef<'_>> = document.select(&rows_selector).collect();
     rows.into_iter().for_each(|row| {
         let cells: Vec<scraper::ElementRef<'_>> = row.select(&table_item_selector).collect();
-        objects.push(create_possible_target(cells).unwrap())
+        let object: PossibleTarget =
+            create_possible_target(cells).expect("Failed to create object");
+        let date = Utc
+            .with_ymd_and_hms(
+                params.year.parse().unwrap(),
+                params.month.parse().unwrap(),
+                params.day.parse().unwrap(),
+                params.hour.parse().unwrap(),
+                params.minute.parse().unwrap(),
+                0,
+            )
+            .unwrap();
+        if is_visible(
+            &object.ra.replace(" ", ":"),
+            &object.dec.replace(" ", ":"),
+            date,
+        ) {
+            objects.push(object);
+        }
     });
     objects
 }
@@ -230,6 +248,7 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
 
     possible_target.altitude = item[table_indices::BEG_ALT]
         .inner_html()
+        .replace(' ', "")
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse altitude: {}", e))?;
 
