@@ -2,7 +2,6 @@ use config::{Config, ConfigError, File};
 use rand::Rng;
 use std::fs;
 use std::io::prelude::*;
-use std::path::PathBuf;
 
 //TODO: Add minimum altitude on different directions
 
@@ -63,29 +62,6 @@ pub struct Settings {
     pub general: General,
     /// Observatory settings structure
     pub observatory: Observatory,
-}
-
-/// Finds if config file exists or create it
-fn file_exists_or_create() -> Result<(), Box<dyn std::error::Error>> {
-    let config_dir: PathBuf = dirs::config_local_dir().ok_or("Failed to get config local dir")?;
-    let asteroid_app_path: PathBuf = config_dir.join("asteroid_tui");
-
-    // Ensure the directory exists
-    if asteroid_app_path.exists() {
-        fs::create_dir_all(&asteroid_app_path)?;
-    }
-
-    // Create or update the config file
-    let config_file_path = asteroid_app_path.join("config.toml");
-    if config_file_path.exists() {
-        let default_settings: Settings = default_settings();
-        let default: String = toml::to_string(&default_settings)?;
-        fs::write(config_file_path.clone(), default)?;
-    }
-
-    // Open the file for external use
-
-    Ok(())
 }
 
 /// Creates default settings for file creation

@@ -25,7 +25,7 @@ Simply download from realease and start the executable
 ```bash
   git clone https://github.com/ziriuz84/asteroid_tui
   cd asteroid_tui
-  cargo install .
+  cargo install --path .
 ```
 
 ## Roadmap
@@ -37,7 +37,7 @@ Simply download from realease and start the executable
 
 ## Support
 
-For support feel free to open issues or go to the discussio section of the repo.
+For support feel free to open issues or go to the discussion section of the repo.
 
 ## Contributing
 
