@@ -210,9 +210,9 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse magnitude: {}", e))?;
 
-    // TODO: panics!
     possible_target.altitude = item[7]
         .inner_html()
+        .replace(' ', "")
         .parse::<f32>()
         .map_err(|e| anyhow!("Failed to parse altitude: {}", e))?;
 
