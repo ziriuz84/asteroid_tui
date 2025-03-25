@@ -386,10 +386,16 @@ impl Settings {
         self.clone()
     }
 
+    /// Sets latitude value in config.toml
+    ///
+    /// * `latitude`: latitude to be set
     pub fn set_latitude(&mut self, latitude: f32) {
         self.observatory.latitude = latitude;
     }
 
+    /// Sets longitude value in config.toml
+    ///
+    /// * `longitude`: longitude to be set
     pub fn set_longitude(&mut self, longitude: f32) {
         self.observatory.longitude = longitude;
     }

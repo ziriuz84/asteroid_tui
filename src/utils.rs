@@ -8,46 +8,51 @@ use astronav::{
     coords::{dms_to_deg, hms_to_deg, star::AltAzBuilder},
     time::{gmst_in_degrees, julian_day_number, julian_time, lmst_in_degrees},
 };
-use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
 use std::f64::consts::PI;
 
-fn convert_hour_angle_to_radians(ra: String) -> f64 {
-    let splitted_ra: Vec<&str> = ra.split(' ').collect();
-    let new_deg: f64 = splitted_ra[0].parse().unwrap();
-    let new_min: f64 = splitted_ra[1].parse().unwrap();
-    let new_sec: f64 = splitted_ra[2].parse().unwrap();
-
-    ((new_deg * 15.0) + (new_min * 0.25) + (new_sec * (15.0 / 3600.0))) * (PI / 180.0)
+fn convert_angle(input: &str, factor_deg: f64, factor_min: f64, factor_sec: f64) -> f64 {
+    let parts: Vec<&str> = input.split(|c| c == ':' || c == ' ').collect();
+    let deg: f64 = parts[0].parse().unwrap();
+    let min: f64 = parts[1].parse().unwrap();
+    let sec: f64 = parts[2].parse().unwrap();
+    deg * factor_deg + min * factor_min + sec * factor_sec
 }
 
-fn convert_dec_to_radians(ra: String) -> f64 {
-    let splitted_dec: Vec<&str> = ra.split(' ').collect();
-    let new_deg: f64 = splitted_dec[0].parse().unwrap();
-    let new_min: f64 = splitted_dec[1].parse().unwrap();
-    let new_sec: f64 = splitted_dec[2].parse().unwrap();
-
-    (new_deg + (new_min / 60.0) + (new_sec / 3600.0)) * (PI / 180.0)
+/// Function to convert hour angle to radians
+///
+/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
+///
+pub fn convert_hour_angle_to_radians(ra: &str) -> f64 {
+    // hour angle in radians: (h, m, s)*15 => degrees then convert to radians.
+    convert_angle(ra, 15.0, 15.0 / 60.0, 15.0 / 3600.0) * (PI / 180.0)
 }
 
-fn convert_hour_angle_to_dec(ra: String) -> f64 {
-    let splitted_ra: Vec<&str> = ra.split(' ').collect();
-    let new_deg: f64 = splitted_ra[0].parse().unwrap();
-    let new_min: f64 = splitted_ra[1].parse().unwrap();
-    let new_sec: f64 = splitted_ra[2].parse().unwrap();
-
-    (new_deg * 15.0) + (new_min * 0.25) + (new_sec * (15.0 / 3600.0))
+/// Function to convert declination to radians
+///
+/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
+pub fn convert_dec_to_radians(dec: &str) -> f64 {
+    convert_angle(dec, 1.0, 1.0 / 60.0, 1.0 / 3600.0) * (PI / 180.0)
 }
 
-fn convert_dec_to_deg(dec: String) -> f64 {
-    let splitted_ra: Vec<&str> = dec.split(' ').collect();
-    let new_deg: f64 = splitted_ra[0].parse().unwrap();
-    let new_min: f64 = splitted_ra[1].parse().unwrap();
-    let new_sec: f64 = splitted_ra[2].parse().unwrap();
-
-    new_deg + (new_min / 60.0) + (new_sec / 3600.0)
+/// Function to convert hour angle to decimal degrees
+///
+/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
+pub fn convert_hour_angle_to_dec(ra: &str) -> f64 {
+    convert_angle(ra, 15.0, 15.0 / 60.0, 15.0 / 3600.0)
 }
 
-fn convert_deg_to_radians(deg: f64) -> f64 {
+/// Function to convert declination to decimal degrees
+///
+/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
+pub fn convert_dec_to_deg(dec: &str) -> f64 {
+    convert_angle(dec, 1.0, 1.0 / 60.0, 1.0 / 3600.0)
+}
+
+/// Function to convert degrees to radians
+///
+/// * `deg`: Angle in degrees
+pub fn convert_deg_to_radians(deg: f64) -> f64 {
     deg * (PI / 180.0)
 }
 
@@ -78,17 +83,20 @@ pub fn is_visible(ra: &str, dec: &str, date: DateTime<Utc>) -> bool {
         .build();
     let altitude = alt.get_altitude();
     let azimuth = alt.get_azimuth();
+    let conditions = [
+        ((45.0, 135.0), *settings.get_south_altitude() as f64),
+        ((135.0, 225.0), *settings.get_south_altitude() as f64),
+        ((225.0, 315.0), *settings.get_west_altitude() as f64),
+    ];
+
     if !(45.0..=315.0).contains(&azimuth) && altitude > *settings.get_north_altitude() as f64 {
         return true;
-    };
-    if azimuth > 45.0 && azimuth < 135.0 && altitude > *settings.get_south_altitude() as f64 {
-        return true;
     }
-    if azimuth > 135.0 && azimuth < 225.0 && altitude > *settings.get_south_altitude() as f64 {
-        return true;
-    }
-    if azimuth > 225.0 && azimuth < 315.0 && altitude > *settings.get_west_altitude() as f64 {
-        return true;
+
+    for &((min_az, max_az), min_alt) in conditions.iter() {
+        if azimuth > min_az && azimuth < max_az && altitude > min_alt {
+            return true;
+        }
     }
     false
 }
