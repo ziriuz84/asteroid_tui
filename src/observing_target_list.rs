@@ -1,3 +1,47 @@
+//! # Scheduling library
+//!
+//! Library for handling observing target list
+//!
+//! It gets data from whatsup.html and returns a structure to be parsed in some way
+//!
+//! Here is an example of the response:
+//!
+//! ```json
+//! {
+//! designation: "M 4",
+//! magnitude: "3.5",
+//! ra: ""
+//! dec: ""
+//! altitude: ""
+//! }
+//! ````
+//!
+//! Here is an example of the request parameters:
+//!
+//! ```json
+//! {
+//! year: "2023",
+//! month: "12",
+//! day: "31",
+//! hour: "20",
+//! minute: "0",
+//! max_objects: "10",
+//! min_alt: "0",
+//! solar_elong: "0",
+//! lunar_elong: "0",
+//! object_type: "mp",
+//! }
+//! ```
+//!
+//! Example of usage:
+//!
+//! ```rust
+//! use observing_target_list::get_targets;
+//! use observing_target_list::WhatsUpParams;
+//! let params = WhatsUpParams::default();
+    let result = get_observing_target_list(&WhatsUpParams::default());
+//! ```
+
 use crate::{settings::Settings, utils::is_visible};
 use anyhow::{anyhow, Result};
 use chrono::{Datelike, TimeZone, Timelike, Utc};
