@@ -1,3 +1,58 @@
+//! # Settings library
+//!
+//! Library for handling settings
+//!
+//! It gets data from config.toml and returns a structure to be parsed in some way
+//!
+//! Here is an example of the toml file:
+//!
+//! ```toml
+//! [observatory]
+//! place = "Kosice"
+//! latitude = 48.726
+//! longitude = 21.252
+//! altitude = 1000
+//! observatory_name = "Kosice"
+//! observer_name = "Tomas"
+//! mpc_code = "104"
+//! north_altitude = 100
+//! south_altitude = 100
+//! east_altitude = 100
+//! west_altitude = 100
+//! [general]
+//! lang = "en"
+//! ```
+//!
+//! Here is an example of response:
+//!
+//! ```json
+//! {
+//! "observatory": {
+//!     "place": "Kosice",
+//!     "latitude": 48.726,
+//!     "longitude": 21.252,
+//!     "altitude": 1000,
+//!     "observatory_name": "Kosice",
+//!     "observer_name": "Tomas",
+//!     "mpc_code": "104",
+//!     "north_altitude": 100,
+//!     "south_altitude": 100,
+//!     "east_altitude": 100,
+//!     "west_altitude": 100
+//! },
+//! "general": {
+//!     "lang": "en"
+//! }
+//! }
+//! ````
+//!
+//! data can be called directly with
+//!
+//! ```rust
+//! use asteroid_tui::settings::Settings;
+//! let settings = Settings::new().unwrap();
+//! ```
+
 use config::{Config, ConfigError, File};
 use rand::Rng;
 use std::fs;
