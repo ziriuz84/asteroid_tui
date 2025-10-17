@@ -8,7 +8,7 @@ use astronav::{
     coords::{dms_to_deg, hms_to_deg, star::AltAzBuilder},
     time::{gmst_in_degrees, julian_day_number, julian_time, lmst_in_degrees},
 };
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use std::f64::consts::PI;
 
 fn convert_angle(input: &str, factor_deg: f64, factor_min: f64, factor_sec: f64) -> f64 {

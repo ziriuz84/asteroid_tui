@@ -1,6 +1,7 @@
+use crate::neocp::NeocpEntry;
 use crate::observing_target_list::PossibleTarget;
 use crate::{
-    observing_target_list::parse_whats_up_response, observing_target_list::WhatsUpParams,
+    neocp, observing_target_list::parse_whats_up_response, observing_target_list::WhatsUpParams,
     sun_moon_times, sun_moon_times::SunMoonTimesResponse, tui, weather, weather::Forecast,
 };
 use chrono::format::StrftimeItems;
@@ -110,7 +111,7 @@ fn generate_sun_moon_times_table() {
     );
 }
 
-const SCHEDULING: [&str; 5] = ["1", "2", "3", "9", "0"];
+const SCHEDULING: [&str; 6] = ["1", "2", "3", "4", "9", "0"];
 
 // Funzione di validazione
 fn validate_scheduling_menu_option(option: &str) -> bool {
@@ -137,6 +138,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
 1. Weather Forecast
 2. Sun and moon times
 3. Observing target list
+4. Visible NeoCP List
 9. Back
 0. Quit"
     );
@@ -152,6 +154,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
         "1" => create_weather_table(),
         "2" => generate_sun_moon_times_table(),
         "3" => observing_target_list()?,
+        "4" => create_neocp_list_table(),
         "9" => tui::settings_menu()?,
         _ => (),
     }
@@ -400,6 +403,37 @@ fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
     table
         .set_width(80)
         .set_header(vec!["Designation", "Magnitude", "RA", "DEC", "Altitude"]);
+    for item in data {
+        let row: Vec<String> = converters
+            .iter()
+            .map(|converter| converter(&item))
+            .collect();
+        table.add_row(row);
+    }
+    println!("{table}");
+}
+
+fn create_neocp_list_table() {
+    let _ = disable_raw_mode();
+    let data = neocp::get_visible_neocp_objects(None).unwrap_or_else(|_| Vec::new());
+    let mut table = Table::new();
+    let converters: Vec<Box<dyn Fn(&NeocpEntry) -> String>> = vec![
+        Box::new(|item: &NeocpEntry| item.temp_designation.to_string()),
+        Box::new(|item: &NeocpEntry| item.score.to_string()),
+        Box::new(|item: &NeocpEntry| item.right_ascension.to_string()),
+        Box::new(|item: &NeocpEntry| item.declination.to_string()),
+        Box::new(|item: &NeocpEntry| item.visual_magnitude.to_string()),
+        Box::new(|item: &NeocpEntry| item.days_not_seen.to_string()),
+    ];
+
+    table.set_width(80).set_header(vec![
+        "Temp Designation",
+        "Score",
+        "RA",
+        "DEC",
+        "Mag",
+        "Days not seen",
+    ]);
     for item in data {
         let row: Vec<String> = converters
             .iter()

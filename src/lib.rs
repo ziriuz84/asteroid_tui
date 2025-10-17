@@ -25,3 +25,6 @@ pub mod utils;
 
 /// Tui library
 pub mod tui;
+
+/// NeoCP library
+pub mod neocp;
