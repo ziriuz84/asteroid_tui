@@ -1,5 +1,6 @@
 use crate::neocp::NeocpEntry;
 use crate::i18n::{self, keys};
+use crate::neocp::NeocpEntry;
 use crate::observing_target_list::PossibleTarget;
 use crate::{
     neocp, observing_target_list::parse_whats_up_response, observing_target_list::WhatsUpParams,
@@ -38,11 +39,13 @@ fn create_weather_table() -> Result<()> {
     let _ = disable_raw_mode();
     println!("\nFetching weather forecast... / Recupero previsioni meteo...");
     let mut table = Table::new();
-    let data = weather::prepare_data()
-        .map_err(|e| {
-            eprintln!("Error fetching weather data / Errore nel recupero dati meteo: {}", e);
+    let data = weather::prepare_data().map_err(|e| {
+        eprintln!(
+            "Error fetching weather data / Errore nel recupero dati meteo: {}",
             e
-        })?;
+        );
+        e
+    })?;
     let timezero = format!("{}00", data.init);
     let forecast = data.dataseries;
 
@@ -90,11 +93,13 @@ fn create_weather_table() -> Result<()> {
 fn generate_sun_moon_times_table() -> Result<()> {
     let _ = disable_raw_mode();
     println!("\nFetching sun/moon times... / Recupero orari sole/luna...");
-    let data: SunMoonTimesResponse = sun_moon_times::prepare_data()
-        .map_err(|e| {
-            eprintln!("Error fetching sun/moon times / Errore nel recupero orari: {}", e);
+    let data: SunMoonTimesResponse = sun_moon_times::prepare_data().map_err(|e| {
+        eprintln!(
+            "Error fetching sun/moon times / Errore nel recupero orari: {}",
             e
-        })?;
+        );
+        e
+    })?;
     println!("All times are {}", data.tzid);
     println!("Sunrise: {}", data.results.sunrise);
     println!("Sunset: {}", data.results.sunset);
@@ -193,7 +198,7 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
         }
         "3" => observing_target_list()?,
         "4" => create_neocp_list_table(),
-        "9" => tui::settings_menu()?,
+        "9" => tui::main_menu()?,
         _ => (),
     }
     Ok(())
@@ -225,7 +230,8 @@ fn validate_year(year: &str) -> bool {
 
 /// Validates month input (1-12)
 fn validate_month(month: &str) -> bool {
-    month.parse::<u32>()
+    month
+        .parse::<u32>()
         .map(|m| m >= 1 && m <= 12)
         .unwrap_or(false)
 }
@@ -239,23 +245,21 @@ fn validate_day(day: &str) -> bool {
 
 /// Validates hour input (0-23)
 fn validate_hour(hour: &str) -> bool {
-    hour.parse::<u32>()
-        .map(|h| h <= 23)
-        .unwrap_or(false)
+    hour.parse::<u32>().map(|h| h <= 23).unwrap_or(false)
 }
 
 /// Validates minute input (0-59)
 fn validate_minute(minute: &str) -> bool {
-    minute.parse::<u32>()
-        .map(|m| m <= 59)
-        .unwrap_or(false)
+    minute.parse::<u32>().map(|m| m <= 59).unwrap_or(false)
 }
 
 /// Reads and validates year input
 fn read_year() -> Result<String> {
     let year = Readline::default()
         .title("Year (YYYY): ")
-        .validator(validate_year, |x| format!("{} is not a valid year (1900-2200)", x))
+        .validator(validate_year, |x| {
+            format!("{} is not a valid year (1900-2200)", x)
+        })
         .prompt()
         .context("Failed to create year prompt")?
         .run()
@@ -267,7 +271,9 @@ fn read_year() -> Result<String> {
 fn read_month() -> Result<String> {
     let month = Readline::default()
         .title("Month (MM): ")
-        .validator(validate_month, |x| format!("{} is not a valid month (1-12)", x))
+        .validator(validate_month, |x| {
+            format!("{} is not a valid month (1-12)", x)
+        })
         .prompt()
         .context("Failed to create month prompt")?
         .run()
@@ -277,11 +283,13 @@ fn read_month() -> Result<String> {
 
 /// Reads and validates day input, checking against year and month
 fn read_day(year: &str, month: &str) -> Result<String> {
-    let year_num = year.parse::<u32>()
+    let year_num = year
+        .parse::<u32>()
         .context("Invalid year for date validation")?;
-    let month_num = month.parse::<u32>()
+    let month_num = month
+        .parse::<u32>()
         .context("Invalid month for date validation")?;
-    
+
     loop {
         let day = Readline::default()
             .title("Day (DD): ")
@@ -290,7 +298,7 @@ fn read_day(year: &str, month: &str) -> Result<String> {
             .context("Failed to create day prompt")?
             .run()
             .context("Failed to read day input")?;
-        
+
         // Validate the day against the actual month/year
         if let Ok(day_num) = day.parse::<u32>() {
             if validate_date(year_num, month_num, day_num) {
@@ -308,7 +316,9 @@ fn read_day(year: &str, month: &str) -> Result<String> {
 fn read_hour() -> Result<String> {
     let hour = Readline::default()
         .title("Hour (HH, 0-23): ")
-        .validator(validate_hour, |x| format!("{} is not a valid hour (0-23)", x))
+        .validator(validate_hour, |x| {
+            format!("{} is not a valid hour (0-23)", x)
+        })
         .prompt()
         .context("Failed to create hour prompt")?
         .run()
@@ -320,7 +330,9 @@ fn read_hour() -> Result<String> {
 fn read_minute() -> Result<String> {
     let minute = Readline::default()
         .title("Minute (MM, 0-59): ")
-        .validator(validate_minute, |x| format!("{} is not a valid minute (0-59)", x))
+        .validator(validate_minute, |x| {
+            format!("{} is not a valid minute (0-59)", x)
+        })
         .prompt()
         .context("Failed to create minute prompt")?
         .run()
@@ -389,25 +401,25 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nObserving Target List\n\n");
-    
+
     // Read date and time inputs
     let year = read_year()?;
     let month = read_month()?;
     let day = read_day(&year, &month)?;
     let hour = read_hour()?;
     let minute = read_minute()?;
-    
+
     // Read other parameters
     let duration = read_positive_integer("Duration in hours (H or HH): ", "duration")?;
     let max_objects = read_positive_integer("Maximum number of objects: ", "max_objects")?;
     let min_alt = read_positive_integer("Minimum Altitude (deg): ", "min_alt")?;
     let solar_elong = read_positive_integer("Maximum Solar elongation (deg): ", "solar_elong")?;
     let lunar_elong = read_positive_integer("Maximum Lunar elongation (deg): ", "lunar_elong")?;
-    
+
     // Read object type
     let object_type = read_object_type()?;
     let object_type_code = map_object_type_to_code(&object_type);
-    
+
     // Build parameters
     let whats_up_params = WhatsUpParams {
         year,
@@ -422,28 +434,38 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
         lunar_elong,
         object_type: object_type_code.to_string(),
     };
-    
+
     // Fetch and display data
     println!("\nFetching observing target list... / Recupero lista obiettivi osservazione...");
-    let data = parse_whats_up_response(&whats_up_params)
-        .map_err(|e| {
-            eprintln!("Error fetching observing target list / Errore nel recupero lista: {}", e);
+    let data = parse_whats_up_response(&whats_up_params).map_err(|e| {
+        eprintln!(
+            "Error fetching observing target list / Errore nel recupero lista: {}",
             e
-        })?;
-    
+        );
+        e
+    })?;
+
     if data.is_empty() {
         println!("\nNo visible objects found for the selected criteria.");
         println!("Nessun oggetto visibile trovato per i criteri selezionati.");
     } else {
-        println!("\nFound {} object(s) / Trovato/i {} oggetto/i:", data.len(), data.len());
+        println!(
+            "\nFound {} object(s) / Trovato/i {} oggetto/i:",
+            data.len(),
+            data.len()
+        );
         create_whats_up_list_table(data);
     }
-    
+
     // Wait for user input to continue
     let mut p = Readline::default()
-        .title(&format!("\n9 {} / {}, 0 {} / {}:",
-            i18n::t(keys::BACK), "Indietro",
-            i18n::t(keys::QUIT), "Esci"))
+        .title(&format!(
+            "\n9 {} / {}, 0 {} / {}:",
+            i18n::t(keys::BACK),
+            "Indietro",
+            i18n::t(keys::QUIT),
+            "Esci"
+        ))
         .validator(
             validate_weather_forecast_option,
             generate_weather_forecast_error_message,
@@ -469,6 +491,36 @@ fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
     table
         .set_width(80)
         .set_header(vec!["Designation", "Magnitude", "RA", "DEC", "Altitude"]);
+    for item in data {
+        let row: Vec<String> = converters
+            .iter()
+            .map(|converter| converter(&item))
+            .collect();
+        table.add_row(row);
+    }
+    println!("{table}");
+}
+fn create_neocp_list_table() {
+    let _ = disable_raw_mode();
+    let data = neocp::get_visible_neocp_objects(None).unwrap_or_else(|_| Vec::new());
+    let mut table = Table::new();
+    let converters: Vec<Box<dyn Fn(&NeocpEntry) -> String>> = vec![
+        Box::new(|item: &NeocpEntry| item.temp_designation.to_string()),
+        Box::new(|item: &NeocpEntry| item.score.to_string()),
+        Box::new(|item: &NeocpEntry| item.right_ascension.to_string()),
+        Box::new(|item: &NeocpEntry| item.declination.to_string()),
+        Box::new(|item: &NeocpEntry| item.visual_magnitude.to_string()),
+        Box::new(|item: &NeocpEntry| item.days_not_seen.to_string()),
+    ];
+
+    table.set_width(80).set_header(vec![
+        "Temp Designation",
+        "Score",
+        "RA",
+        "DEC",
+        "Mag",
+        "Days not seen",
+    ]);
     for item in data {
         let row: Vec<String> = converters
             .iter()
@@ -518,7 +570,7 @@ mod test {
         assert!(validate_date(2000, 1, 1));
         assert!(validate_date(2000, 2, 29)); // Leap year
         assert!(validate_date(2024, 12, 31));
-        
+
         // Invalid dates
         assert!(!validate_date(2000, 2, 30)); // February doesn't have 30 days
         assert!(!validate_date(2001, 2, 29)); // Not a leap year
@@ -534,7 +586,7 @@ mod test {
         assert!(validate_year("2024"));
         assert!(validate_year("1900"));
         assert!(validate_year("2200"));
-        
+
         assert!(!validate_year("1899")); // Too old
         assert!(!validate_year("2201")); // Too new
         assert!(!validate_year("abc")); // Not a number
@@ -546,7 +598,7 @@ mod test {
         for i in 1..=12 {
             assert!(validate_month(&i.to_string()));
         }
-        
+
         assert!(!validate_month("0"));
         assert!(!validate_month("13"));
         assert!(!validate_month("abc"));
@@ -558,7 +610,7 @@ mod test {
         for i in 1..=31 {
             assert!(validate_day(&i.to_string()));
         }
-        
+
         assert!(!validate_day("0"));
         assert!(!validate_day("32"));
         assert!(!validate_day("abc"));
@@ -570,7 +622,7 @@ mod test {
         for i in 0..=23 {
             assert!(validate_hour(&i.to_string()));
         }
-        
+
         assert!(!validate_hour("24"));
         assert!(!validate_hour("abc"));
         assert!(!validate_hour(""));
@@ -581,7 +633,7 @@ mod test {
         for i in 0..=59 {
             assert!(validate_minute(&i.to_string()));
         }
-        
+
         assert!(!validate_minute("60"));
         assert!(!validate_minute("abc"));
         assert!(!validate_minute(""));
