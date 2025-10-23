@@ -66,7 +66,7 @@ pub struct Settings {
 
 /// Creates default settings for file creation
 fn default_settings() -> Settings {
-    let test = false; // true if you want to test
+    let test = cfg!(test); // true if we're running tests
     let mut rng = rand::rng();
     let default_general: General = General {
         lang: "en".to_string(),

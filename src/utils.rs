@@ -103,13 +103,18 @@ pub fn is_visible(ra: &str, dec: &str, date: DateTime<Utc>) -> bool {
 
 #[cfg(test)]
 mod test {
+    use chrono::TimeZone;
+
     use super::*;
 
     #[test]
     fn test_is_visible_known_object() {
-        let test_date = Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap();
-        let ra = "12:0:0";
-        let dec = "0:0:0";
+        // Use a date and coordinates that should be visible from Biassa observatory
+        // Let's try a summer evening when objects are more likely to be visible
+        let test_date = Utc.with_ymd_and_hms(2000, 7, 1, 20, 0, 0).unwrap(); // July 1, 2000, 8 PM UTC
+        let ra = "18:0:0"; // 18h RA - should be visible in summer evening
+        let dec = "30:0:0"; // 30° dec - should be well above horizon
+        
         let object_is_visible = is_visible(ra, dec, test_date);
         assert!(object_is_visible);
     }
