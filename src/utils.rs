@@ -40,7 +40,7 @@ use astronav::{
     coords::{dms_to_deg, hms_to_deg, star::AltAzBuilder},
     time::{gmst_in_degrees, julian_day_number, julian_time, lmst_in_degrees},
 };
-use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use std::f64::consts::PI;
 
 fn convert_angle(input: &str, factor_deg: f64, factor_min: f64, factor_sec: f64) -> f64 {
@@ -51,48 +51,201 @@ fn convert_angle(input: &str, factor_deg: f64, factor_min: f64, factor_sec: f64)
     deg * factor_deg + min * factor_min + sec * factor_sec
 }
 
-/// Function to convert hour angle to radians
+/// Converts right ascension from hour angle format to radians
 ///
-/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
+/// Right ascension is typically expressed in hours, minutes, and seconds (HMS format),
+/// where 24 hours = 360 degrees. This function converts it to radians for use in
+/// astronomical calculations.
 ///
+/// # Arguments
+///
+/// * `ra`: Right ascension in hour angle format as "hh:mm:ss" or "hh mm ss"
+///   (e.g., "12:34:56" or "12 34 56")
+///
+/// # Returns
+///
+/// The right ascension in radians (0 to 2π)
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - The input string cannot be split into exactly 3 parts
+/// - Any part cannot be parsed as a number
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+///
+/// let ra_rad = utils::convert_hour_angle_to_radians("12:34:56");
+/// println!("RA in radians: {:.6}", ra_rad);
+/// ```
 pub fn convert_hour_angle_to_radians(ra: &str) -> f64 {
     // hour angle in radians: (h, m, s)*15 => degrees then convert to radians.
     convert_angle(ra, 15.0, 15.0 / 60.0, 15.0 / 3600.0) * (PI / 180.0)
 }
 
-/// Function to convert declination to radians
+/// Converts declination from degrees, minutes, seconds format to radians
 ///
-/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
+/// Declination is expressed in degrees, minutes, and seconds (DMS format).
+/// This function converts it to radians for use in astronomical calculations.
+///
+/// # Arguments
+///
+/// * `dec`: Declination in DMS format as "±dd:mm:ss" or "±dd mm ss"
+///   (e.g., "+45:30:15" or "-12 34 56")
+///
+/// # Returns
+///
+/// The declination in radians (-π/2 to π/2)
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - The input string cannot be split into exactly 3 parts
+/// - Any part cannot be parsed as a number
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+///
+/// let dec_rad = utils::convert_dec_to_radians("+45:30:15");
+/// println!("Dec in radians: {:.6}", dec_rad);
+/// ```
 pub fn convert_dec_to_radians(dec: &str) -> f64 {
     convert_angle(dec, 1.0, 1.0 / 60.0, 1.0 / 3600.0) * (PI / 180.0)
 }
 
-/// Function to convert hour angle to decimal degrees
+/// Converts right ascension from hour angle format to decimal degrees
 ///
-/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
+/// Converts right ascension from HMS format (hours, minutes, seconds) to decimal degrees.
+/// Since 24 hours = 360 degrees, each hour equals 15 degrees.
+///
+/// # Arguments
+///
+/// * `ra`: Right ascension in hour angle format as "hh:mm:ss" or "hh mm ss"
+///   (e.g., "12:34:56")
+///
+/// # Returns
+///
+/// The right ascension in decimal degrees (0 to 360)
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - The input string cannot be split into exactly 3 parts
+/// - Any part cannot be parsed as a number
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+///
+/// let ra_deg = utils::convert_hour_angle_to_dec("12:34:56");
+/// println!("RA in degrees: {:.6}", ra_deg); // Approximately 188.733 degrees
+/// ```
 pub fn convert_hour_angle_to_dec(ra: &str) -> f64 {
     convert_angle(ra, 15.0, 15.0 / 60.0, 15.0 / 3600.0)
 }
 
-/// Function to convert declination to decimal degrees
+/// Converts declination from degrees, minutes, seconds format to decimal degrees
 ///
-/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
+/// Converts declination from DMS format to decimal degrees for easier calculations.
+///
+/// # Arguments
+///
+/// * `dec`: Declination in DMS format as "±dd:mm:ss" or "±dd mm ss"
+///   (e.g., "+45:30:15" or "-12 34 56")
+///
+/// # Returns
+///
+/// The declination in decimal degrees (-90 to +90)
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - The input string cannot be split into exactly 3 parts
+/// - Any part cannot be parsed as a number
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+///
+/// let dec_deg = utils::convert_dec_to_deg("+45:30:15");
+/// println!("Dec in degrees: {:.6}", dec_deg); // Approximately 45.504 degrees
+/// ```
 pub fn convert_dec_to_deg(dec: &str) -> f64 {
     convert_angle(dec, 1.0, 1.0 / 60.0, 1.0 / 3600.0)
 }
 
-/// Function to convert degrees to radians
+/// Converts an angle from degrees to radians
+///
+/// Simple conversion using the standard formula: radians = degrees × π / 180
+///
+/// # Arguments
 ///
 /// * `deg`: Angle in degrees
+///
+/// # Returns
+///
+/// The angle in radians
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+///
+/// let rad = utils::convert_deg_to_radians(180.0);
+/// println!("180 degrees = {} radians (π)", rad); // Approximately 3.14159
+/// ```
 pub fn convert_deg_to_radians(deg: f64) -> f64 {
     deg * (PI / 180.0)
 }
 
-/// Function to check if an object is visible
+/// Checks if a celestial object is visible from the observatory location at a given time
 ///
-/// * `ra`: Right ascension in hour angle formatted as "hh:mm:ss"
-/// * `dec`: Declination in degrees formatted as "dd:mm:ss"
-/// * `date`: date of observation
+/// This function calculates the object's altitude and azimuth at the specified time and
+/// checks if it meets the visibility criteria defined in the settings. The object must be
+/// above the minimum altitude thresholds for the appropriate direction (north, south, east, west).
+///
+/// Visibility is determined by:
+/// - Altitude above the horizon (must exceed direction-specific minimums)
+/// - Azimuth direction (different altitude requirements for different compass directions)
+///
+/// # Arguments
+///
+/// * `ra`: Right ascension in hour angle format as "hh:mm:ss" or "hh mm ss"
+/// * `dec`: Declination in DMS format as "±dd:mm:ss" or "±dd mm ss"
+/// * `date`: Date and time of observation in UTC
+///
+/// # Returns
+///
+/// `true` if the object is visible (meets all altitude requirements), `false` otherwise
+///
+/// # Panics
+///
+/// This function will panic if:
+/// - Settings cannot be loaded
+/// - Coordinate conversion fails
+/// - Astronomical calculations fail
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::utils;
+/// use chrono::{TimeZone, Utc};
+///
+/// let date = Utc.with_ymd_and_hms(2024, 3, 27, 20, 0, 0).unwrap();
+/// let is_visible = utils::is_visible("12:34:56", "+45:30:15", date);
+///
+/// if is_visible {
+///     println!("Object is visible at the specified time!");
+/// } else {
+///     println!("Object is below the horizon or doesn't meet visibility criteria");
+/// }
+/// ```
 pub fn is_visible(ra: &str, dec: &str, date: DateTime<Utc>) -> bool {
     let settings = Settings::new().unwrap();
     let longitude = *settings.get_longitude();

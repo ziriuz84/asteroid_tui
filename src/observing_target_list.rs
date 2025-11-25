@@ -6,8 +6,8 @@
 //! from the MPC's "What's Up" service. It parses HTML responses and filters objects based on
 //! visibility criteria including altitude, solar elongation, and lunar elongation.
 //!
-//! It gets data from https://www.minorplanetcenter.net/whatsup/index and returns a vector of
-//! `PossibleTarget` structures.
+//! It gets data from [Minor Planet Center What's Up service](https://www.minorplanetcenter.net/whatsup/index)
+//! and returns a vector of `PossibleTarget` structures.
 //!
 //! The response is an HTML page containing a table with the following columns:
 //! - Designation (object name)
@@ -90,13 +90,35 @@ pub mod table_indices {
     pub const END_ALT: usize = 15;
 }
 
-/// Possible target structure
+/// Structure representing a possible observing target
 ///
-/// * `designation`: Object designation
-/// * `ra`: Object RA
-/// * `dec`: Object Dec
-/// * `magnitude`: Object magnitude
-/// * `altitude`: Object altitude
+/// Contains the essential information needed to identify and observe a celestial object,
+/// including its designation, coordinates, brightness, and altitude at the observation time.
+///
+/// # Fields
+///
+/// * `designation`: Object designation (e.g., "2024 AB", "C/2024 A1")
+/// * `ra`: Right ascension in format "HH MM SS" or "HH:MM:SS"
+/// * `dec`: Declination in format "±DD MM SS" or "±DD:MM:SS"
+/// * `magnitude`: Apparent visual magnitude (lower values are brighter)
+/// * `altitude`: Altitude above horizon in degrees at the observation time
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::observing_target_list::PossibleTarget;
+///
+/// let target = PossibleTarget {
+///     designation: "2024 AB".to_string(),
+///     ra: "12:34:56".to_string(),
+///     dec: "+45:30:15".to_string(),
+///     magnitude: 18.5,
+///     altitude: 45.2,
+/// };
+///
+/// println!("Target: {} at RA={}, Dec={}, Mag={:.1}, Alt={:.1}°",
+///          target.designation, target.ra, target.dec, target.magnitude, target.altitude);
+/// ```
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PossibleTarget {
     /// Object designation
@@ -111,19 +133,49 @@ pub struct PossibleTarget {
     pub altitude: f32,
 }
 
-/// Request parameters struct
+/// Request parameters for querying the MPC What's Up service
 ///
-/// * `year`: Year of scheduled observation
-/// * `month`: Month of scheduled observation
-/// * `day`: Day of scheduled observation
-/// * `hour`: Hour of scheduled observation
-/// * `minute`: Minutes of scheduled observation
-/// * `duration`: Duration of scheduled observation
-/// * `max_objects`: Maximum number of object to retrieve
-/// * `min_alt`: Minimum Altitude of object
-/// * `solar_elong`: Minimum Solar elongation
-/// * `lunar_elong`: Minimum Lunar elongation
-/// * `object_type`: Object type
+/// All parameters are stored as strings to match the API format. Use `Default::default()`
+/// to create parameters with current date/time and reasonable defaults, or construct
+/// manually for custom queries.
+///
+/// # Fields
+///
+/// * `year`: Year of scheduled observation (4 digits, e.g., "2024")
+/// * `month`: Month of scheduled observation (1-12, e.g., "3")
+/// * `day`: Day of scheduled observation (1-31, e.g., "27")
+/// * `hour`: Hour of scheduled observation (0-23, e.g., "20")
+/// * `minute`: Minutes of scheduled observation (0-59, e.g., "0")
+/// * `duration`: Duration of scheduled observation in hours (e.g., "1")
+/// * `max_objects`: Maximum number of objects to retrieve (e.g., "10")
+/// * `min_alt`: Minimum altitude of object in degrees (e.g., "10")
+/// * `solar_elong`: Minimum solar elongation in degrees (e.g., "0")
+/// * `lunar_elong`: Minimum lunar elongation in degrees (e.g., "0")
+/// * `object_type`: Object type filter ("mp" for minor planets, "comet" for comets, etc.)
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::observing_target_list::WhatsUpParams;
+///
+/// // Use default (current time)
+/// let params = WhatsUpParams::default();
+///
+/// // Or create custom parameters
+/// let custom_params = WhatsUpParams {
+///     year: "2024".to_string(),
+///     month: "3".to_string(),
+///     day: "27".to_string(),
+///     hour: "20".to_string(),
+///     minute: "0".to_string(),
+///     duration: "2".to_string(),
+///     max_objects: "20".to_string(),
+///     min_alt: "15".to_string(),
+///     solar_elong: "30".to_string(),
+///     lunar_elong: "45".to_string(),
+///     object_type: "mp".to_string(),
+/// };
+/// ```
 #[derive(Debug)]
 pub struct WhatsUpParams {
     /// Year of scheduled observation
@@ -229,12 +281,57 @@ fn get_observing_target_list(params: &WhatsUpParams) -> String {
         .expect("Failed to convert to text")
 }
 
-//TODO: Add altitude filtering on different directions
-//TODO: Write better documentation
 
-/// Returns data from what's up list of MPC
+/// Retrieves and parses the observing target list from the MPC What's Up service
 ///
-/// * `params`: WhatsupParams struct with all requested parameters
+/// This function fetches the HTML page from the MPC service, parses the table of objects,
+/// and filters them based on visibility criteria (altitude constraints from settings).
+/// Only objects that are actually visible from the observatory location are returned.
+///
+/// # Arguments
+///
+/// * `params`: `WhatsUpParams` struct containing all query parameters (date, time, filters, etc.)
+///
+/// # Returns
+///
+/// A vector of `PossibleTarget` structures representing objects that are:
+/// - Listed in the MPC response
+/// - Meet the specified criteria (altitude, elongation, etc.)
+/// - Are actually visible from the observatory location at the specified time
+///
+/// # Errors
+///
+/// This function may panic if:
+/// - The settings cannot be loaded
+/// - The API request fails
+/// - The HTML structure doesn't match the expected format
+/// - Date/time parsing fails
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::observing_target_list::{parse_whats_up_response, WhatsUpParams};
+///
+/// let params = WhatsUpParams {
+///     year: "2024".to_string(),
+///     month: "3".to_string(),
+///     day: "27".to_string(),
+///     hour: "20".to_string(),
+///     minute: "0".to_string(),
+///     duration: "1".to_string(),
+///     max_objects: "10".to_string(),
+///     min_alt: "15".to_string(),
+///     solar_elong: "0".to_string(),
+///     lunar_elong: "0".to_string(),
+///     object_type: "mp".to_string(),
+/// };
+///
+/// let targets = parse_whats_up_response(&params);
+/// println!("Found {} visible targets", targets.len());
+/// for target in targets {
+///     println!("  {}: Mag={:.1}, Alt={:.1}°", target.designation, target.magnitude, target.altitude);
+/// }
+/// ```
 pub fn parse_whats_up_response(params: &WhatsUpParams) -> Vec<PossibleTarget> {
     let mut objects: Vec<PossibleTarget> = Vec::new();
     let data = get_observing_target_list(params);

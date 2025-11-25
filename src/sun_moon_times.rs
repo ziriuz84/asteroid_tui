@@ -1,8 +1,13 @@
 //! # Sun Moon Times
 //!
-//! Library for getting Sunrise, Moonrise, etc
+//! Library for getting sunrise, sunset, and twilight times from the sunrise-sunset.org API
 //!
-//! It gets data from api.sunrise-sunset.org and returns a structure to be parsed in some way
+//! This library retrieves solar and astronomical timing data including sunrise, sunset, solar noon,
+//! day length, and various twilight periods (civil, nautical, and astronomical). The data is
+//! calculated based on the observatory's latitude and longitude from the settings.
+//!
+//! It gets data from [sunrise-sunset.org API](https://sunrise-sunset.org/api) and returns a
+//! structure to be parsed.
 //!
 //! Here is an example of the response:
 //!
@@ -11,25 +16,30 @@
 //!     "results": {
 //!         "sunrise": "6:34:37 AM",
 //!         "sunset": "5:35:35 PM",
-//!         "solar_noon": "12:00:00 AM",
-//!         "day_length": "05:02:00",
+//!         "solar_noon": "12:00:00 PM",
+//!         "day_length": "11:01:58",
 //!         "civil_twilight_begin": "6:07:00 AM",
-//!         "civil_twilight_end": "5:32:00 PM",
-//!         "nautical_twilight_begin": "6:12:00 AM",
-//!         "nautical_twilight_end": "5:27:00 PM",
-//!         "astronomical_twilight_begin": "6:17:00 AM",
-//!         "astronomical_twilight_end": "5:22:00 PM"
-//!     }
+//!         "civil_twilight_end": "6:02:35 PM",
+//!         "nautical_twilight_begin": "5:35:00 AM",
+//!         "nautical_twilight_end": "6:42:35 PM",
+//!         "astronomical_twilight_begin": "5:02:00 AM",
+//!         "astronomical_twilight_end": "7:15:35 PM"
+//!     },
 //!     "status": "OK",
 //!     "tzid": "UTC"
 //! }
 //! ```
 //!
-//! data can be called directly with
+//! Data can be retrieved with:
 //!
 //! ```rust
 //! use asteroid_tui::sun_moon_times;
+//!
 //! let data = sun_moon_times::prepare_data().unwrap();
+//! println!("Sunrise: {}", data.results.sunrise);
+//! println!("Sunset: {}", data.results.sunset);
+//! println!("Day length: {}", data.results.day_length);
+//! println!("Astronomical twilight begins: {}", data.results.astronomical_twilight_begin);
 //! ```
 
 #![warn(missing_docs)]
@@ -40,18 +50,41 @@ use serde::Deserialize;
 use serde_json::Result;
 
 #[derive(Debug, Deserialize, serde::Serialize)]
-/// Structure with data for Sun, Moon, etc
+/// Structure containing solar and twilight timing data
 ///
-/// * `sunrise`: Sunrise time
-/// * `sunset`: Sunset time
-/// * `solar_noon`: Solar noon time
-/// * `day_length`: Day length
-/// * `civil_twilight_begin`: Civil twilight begin time
-/// * `civil_twilight_end`: Civil twilight end time
-/// * `nautical_twilight_begin`: Nautical twilight begin time
-/// * `nautical_twilight_end`: Nautical twilight end time
-/// * `astronomical_twilight_begin`: Astronomical twilight begin time
-/// * `astronomical_twilight_end`: Astronomical twilight end time
+/// All times are returned as strings in 12-hour format (e.g., "6:34:37 AM").
+///
+/// # Fields
+///
+/// * `sunrise`: Local sunrise time
+/// * `sunset`: Local sunset time
+/// * `solar_noon`: Time when the sun reaches its highest point in the sky
+/// * `day_length`: Duration from sunrise to sunset (format: "HH:MM:SS")
+/// * `civil_twilight_begin`: Beginning of civil twilight (sun 6° below horizon)
+/// * `civil_twilight_end`: End of civil twilight (sun 6° below horizon)
+/// * `nautical_twilight_begin`: Beginning of nautical twilight (sun 12° below horizon)
+/// * `nautical_twilight_end`: End of nautical twilight (sun 12° below horizon)
+/// * `astronomical_twilight_begin`: Beginning of astronomical twilight (sun 18° below horizon)
+/// * `astronomical_twilight_end`: End of astronomical twilight (sun 18° below horizon)
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::sun_moon_times::SunMoonTimes;
+///
+/// let times = SunMoonTimes {
+///     sunrise: "6:34:37 AM".to_string(),
+///     sunset: "5:35:35 PM".to_string(),
+///     solar_noon: "12:05:06 PM".to_string(),
+///     day_length: "11:01:58".to_string(),
+///     civil_twilight_begin: "6:07:00 AM".to_string(),
+///     civil_twilight_end: "6:02:35 PM".to_string(),
+///     nautical_twilight_begin: "5:35:00 AM".to_string(),
+///     nautical_twilight_end: "6:42:35 PM".to_string(),
+///     astronomical_twilight_begin: "5:02:00 AM".to_string(),
+///     astronomical_twilight_end: "7:15:35 PM".to_string(),
+/// };
+/// ```
 pub struct SunMoonTimes {
     /// Sunrise time
     pub sunrise: String,
@@ -76,16 +109,30 @@ pub struct SunMoonTimes {
 }
 
 #[derive(Debug, Deserialize, serde::Serialize)]
-/// Response structure from sunrise-sunset.org
+/// Response structure from sunrise-sunset.org API
 ///
-/// * `results`: results of type SunMoonTimes
-/// * `status`: status of response
-/// * `tzid`: tzid setted (UTC)
+/// # Fields
+///
+/// * `results`: Solar and twilight timing data
+/// * `status`: Response status (typically "OK" for successful requests)
+/// * `tzid`: Timezone identifier (typically "UTC")
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::sun_moon_times;
+///
+/// let response = sun_moon_times::prepare_data().unwrap();
+/// assert_eq!(response.status, "OK");
+/// assert_eq!(response.tzid, "UTC");
+/// println!("Sunrise: {}", response.results.sunrise);
+/// ```
 pub struct SunMoonTimesResponse {
-    /// Results with data
+    /// Results with solar and twilight timing data
     pub results: SunMoonTimes,
+    /// Response status from the API
     status: String,
-    /// Timezone specified
+    /// Timezone identifier (typically "UTC")
     pub tzid: String,
 }
 
@@ -104,7 +151,39 @@ fn get_sun_moon_times() -> String {
     response.unwrap()
 }
 
-/// Returns a json with data for Sunset, sunrise, etc
+/// Retrieves and parses sunrise, sunset, and twilight data from the sunrise-sunset.org API
+///
+/// This function fetches solar timing data based on the observatory's latitude and longitude
+/// from the application settings. The data includes sunrise, sunset, solar noon, day length,
+/// and various twilight periods.
+///
+/// # Returns
+///
+/// Returns `Ok(SunMoonTimesResponse)` containing the parsed solar timing data, or
+/// `Err` if the API request fails or the response cannot be parsed.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// - The settings cannot be loaded
+/// - The API request fails (network error, invalid URL, etc.)
+/// - The response cannot be parsed as valid JSON
+/// - The response structure doesn't match the expected format
+///
+/// # Example
+///
+/// ```rust
+/// use asteroid_tui::sun_moon_times;
+///
+/// match sun_moon_times::prepare_data() {
+///     Ok(data) => {
+///         println!("Sunrise: {}", data.results.sunrise);
+///         println!("Sunset: {}", data.results.sunset);
+///         println!("Day length: {}", data.results.day_length);
+///     }
+///     Err(e) => eprintln!("Failed to get solar times: {}", e),
+/// }
+/// ```
 pub fn prepare_data() -> Result<SunMoonTimesResponse> {
     let response: String = get_sun_moon_times();
     serde_json::from_str(&response)
