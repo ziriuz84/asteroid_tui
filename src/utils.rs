@@ -1,6 +1,38 @@
 //! # Utils
 //!
-//! Library for general utilities
+//! Library for general astronomical utility functions
+//!
+//! This library provides utility functions for coordinate conversions, angle transformations,
+//! and visibility calculations for astronomical objects.
+//!
+//! Main functionalities include:
+//! - Converting between different coordinate formats (hour angle, declination, degrees, radians)
+//! - Checking if an object is visible from a given location at a specific time
+//!
+//! Example usage for coordinate conversion:
+//!
+//! ```rust
+//! use asteroid_tui::utils;
+//!
+//! // Convert hour angle to radians
+//! let ra_rad = utils::convert_hour_angle_to_radians("12:34:56");
+//!
+//! // Convert declination to degrees
+//! let dec_deg = utils::convert_dec_to_deg("+45:30:15");
+//! ```
+//!
+//! Example usage for visibility check:
+//!
+//! ```rust
+//! use asteroid_tui::utils;
+//! use chrono::{TimeZone, Utc};
+//!
+//! let date = Utc.with_ymd_and_hms(2024, 3, 27, 20, 0, 0).unwrap();
+//! let is_visible = utils::is_visible("12:34:56", "+45:30:15", date);
+//! if is_visible {
+//!     println!("Object is visible!");
+//! }
+//! ```
 
 use crate::settings::Settings;
 //use astro;

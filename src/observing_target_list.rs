@@ -1,45 +1,46 @@
-//! # Scheduling library
+//! # Observing Target List
 //!
-//! Library for handling observing target list
+//! Library for retrieving and parsing observing target lists from the Minor Planet Center (MPC)
 //!
-//! It gets data from whatsup.html and returns a structure to be parsed in some way
+//! This library retrieves a list of observable minor planets, comets, and other celestial objects
+//! from the MPC's "What's Up" service. It parses HTML responses and filters objects based on
+//! visibility criteria including altitude, solar elongation, and lunar elongation.
 //!
-//! Here is an example of the response:
+//! It gets data from https://www.minorplanetcenter.net/whatsup/index and returns a vector of
+//! `PossibleTarget` structures.
 //!
-//! ```json
-//! {
-//! designation: "M 4",
-//! magnitude: "3.5",
-//! ra: ""
-//! dec: ""
-//! altitude: ""
-//! }
-//! ````
+//! The response is an HTML page containing a table with the following columns:
+//! - Designation (object name)
+//! - Magnitude
+//! - Solar elongation
+//! - Lunar elongation
+//! - Begin/End/Maximum time, RA, Dec, and Altitude
 //!
-//! Here is an example of the request parameters:
-//!
-//! ```json
-//! {
-//! year: "2023",
-//! month: "12",
-//! day: "31",
-//! hour: "20",
-//! minute: "0",
-//! max_objects: "10",
-//! min_alt: "0",
-//! solar_elong: "0",
-//! lunar_elong: "0",
-//! object_type: "mp",
-//! }
-//! ```
-//!
-//! Example of usage:
+//! Example of parsed data structure:
 //!
 //! ```rust
-//! use observing_target_list::get_targets;
-//! use observing_target_list::WhatsUpParams;
+//! use asteroid_tui::observing_target_list::PossibleTarget;
+//!
+//! let target = PossibleTarget {
+//!     designation: "2024 AB".to_string(),
+//!     ra: "12:34:56".to_string(),
+//!     dec: "+12:34:56".to_string(),
+//!     magnitude: 18.5,
+//!     altitude: 45.2,
+//! };
+//! ```
+//!
+//! Data can be retrieved with:
+//!
+//! ```rust
+//! use asteroid_tui::observing_target_list::{parse_whats_up_response, WhatsUpParams};
+//!
 //! let params = WhatsUpParams::default();
-    let result = get_observing_target_list(&WhatsUpParams::default());
+//! let targets = parse_whats_up_response(&params);
+//! for target in targets {
+//!     println!("{}: RA={}, Dec={}, Mag={}",
+//!              target.designation, target.ra, target.dec, target.magnitude);
+//! }
 //! ```
 
 use crate::{settings::Settings, utils::is_visible};

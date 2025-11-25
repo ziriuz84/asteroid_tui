@@ -1,3 +1,49 @@
+//! # Weather
+//!
+//! Library for getting astronomical weather forecasts from 7timer.info API
+//!
+//! This library retrieves astronomical weather data including cloud cover, seeing conditions,
+//! transparency, wind, temperature, and other meteorological parameters relevant for astronomical
+//! observations.
+//!
+//! It gets data from http://www.7timer.info/bin/api.pl and returns a structure to be parsed.
+//!
+//! Here is an example of the response:
+//!
+//! ```json
+//! {
+//!     "product": "astro",
+//!     "init": "2024032718",
+//!     "dataseries": [
+//!         {
+//!             "timepoint": 3,
+//!             "cloudcover": 9,
+//!             "seeing": 6,
+//!             "transparency": 5,
+//!             "lifted_index": -4,
+//!             "rh2m": 11,
+//!             "wind10m": {
+//!                 "direction": "SE",
+//!                 "speed": 2
+//!             },
+//!             "temp2m": 29,
+//!             "prec_type": "none"
+//!         }
+//!     ]
+//! }
+//! ```
+//!
+//! Data can be called directly with:
+//!
+//! ```rust
+//! use asteroid_tui::weather;
+//! let data = weather::prepare_data().unwrap();
+//! println!("Initial time: {}", data.init);
+//! for forecast in data.dataseries {
+//!     println!("Timepoint: {}, Cloud cover: {}", forecast.timepoint, forecast.cloud_cover);
+//! }
+//! ```
+
 use crate::settings::Settings;
 use reqwest;
 use serde::{Deserialize, Serialize};

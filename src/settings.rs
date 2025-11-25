@@ -1,56 +1,50 @@
-//! # Settings library
+//! # Settings
 //!
-//! Library for handling settings
+//! Library for managing application settings and configuration
 //!
-//! It gets data from config.toml and returns a structure to be parsed in some way
+//! This library handles loading, saving, and modifying application settings stored in a TOML
+//! configuration file. Settings include observatory location (latitude, longitude, altitude),
+//! observer information, and visibility constraints for different directions.
 //!
-//! Here is an example of the toml file:
+//! The configuration file is stored at `$XDG_CONFIG_HOME/asteroid_tui/config.toml` (or equivalent
+//! on non-Linux systems) and uses TOML format.
+//!
+//! Example configuration file structure:
 //!
 //! ```toml
-//! [observatory]
-//! place = "Kosice"
-//! latitude = 48.726
-//! longitude = 21.252
-//! altitude = 1000
-//! observatory_name = "Kosice"
-//! observer_name = "Tomas"
-//! mpc_code = "104"
-//! north_altitude = 100
-//! south_altitude = 100
-//! east_altitude = 100
-//! west_altitude = 100
 //! [general]
 //! lang = "en"
+//!
+//! [observatory]
+//! place = "My Observatory"
+//! latitude = 44.1
+//! longitude = 9.8
+//! altitude = 500.0
+//! observatory_name = "My Observatory"
+//! observer_name = "John Doe"
+//! mpc_code = "123"
+//! north_altitude = 30
+//! south_altitude = 20
+//! east_altitude = 45
+//! west_altitude = 70
 //! ```
 //!
-//! Here is an example of response:
-//!
-//! ```json
-//! {
-//! "observatory": {
-//!     "place": "Kosice",
-//!     "latitude": 48.726,
-//!     "longitude": 21.252,
-//!     "altitude": 1000,
-//!     "observatory_name": "Kosice",
-//!     "observer_name": "Tomas",
-//!     "mpc_code": "104",
-//!     "north_altitude": 100,
-//!     "south_altitude": 100,
-//!     "east_altitude": 100,
-//!     "west_altitude": 100
-//! },
-//! "general": {
-//!     "lang": "en"
-//! }
-//! }
-//! ````
-//!
-//! data can be called directly with
+//! Settings can be used with:
 //!
 //! ```rust
 //! use asteroid_tui::settings::Settings;
+//!
+//! // Load existing settings or create default if file doesn't exist
 //! let settings = Settings::new().unwrap();
+//!
+//! // Access settings
+//! println!("Observatory: {}", settings.get_observatory_name());
+//! println!("Latitude: {}", settings.get_latitude());
+//! println!("Longitude: {}", settings.get_longitude());
+//!
+//! // Modify settings
+//! let mut settings = Settings::new().unwrap();
+//! settings.set_lang("it".to_string()).unwrap();
 //! ```
 
 use config::{Config, ConfigError, File};
