@@ -1,7 +1,8 @@
 use crate::settings::Settings;
+use anyhow::{Context, Result};
 use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use serde_json;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::fmt;
 use std::fmt::Display;
@@ -374,9 +375,10 @@ impl Display for Wind10mVelocity {
 }
 
 /// Returns the string with full response
-fn get_forecast() -> String {
-    let settings = Settings::new().unwrap();
-    let url: reqwest::Url = reqwest::Url::parse_with_params(
+fn get_forecast() -> Result<String> {
+    let settings = Settings::new()
+        .context("Failed to load settings")?;
+    let url = reqwest::Url::parse_with_params(
         "http://www.7timer.info/bin/api.pl",
         [
             ("lat", settings.get_latitude().to_string()),
@@ -385,15 +387,19 @@ fn get_forecast() -> String {
             ("output", "json".to_string()),
         ],
     )
-    .unwrap();
-    let result = reqwest::blocking::get(url).unwrap().text();
-    result.unwrap()
+    .context("Failed to parse forecast URL")?;
+    let response = reqwest::blocking::get(url)
+        .context("Failed to fetch forecast data")?
+        .text()
+        .context("Failed to read forecast response")?;
+    Ok(response)
 }
 
 /// Returns the ForecastResponse struct with data
 pub fn prepare_data() -> Result<ForecastResponse> {
-    let response: String = get_forecast();
+    let response = get_forecast()?;
     serde_json::from_str(&response)
+        .context("Failed to parse forecast JSON")
 }
 
 #[cfg(test)]
@@ -402,12 +408,16 @@ mod test {
 
     #[test]
     fn test_get_forecast() {
-        assert!(get_forecast().contains("astro"));
+        let result = get_forecast();
+        assert!(result.is_ok());
+        assert!(result.unwrap().contains("astro"));
     }
 
     #[test]
     fn test_prepare_data() {
-        let data = prepare_data().unwrap();
-        assert_eq!(data.product, "astro");
+        let data = prepare_data();
+        assert!(data.is_ok());
+        let forecast = data.unwrap();
+        assert_eq!(forecast.product, "astro");
     }
 }
