@@ -1,10 +1,12 @@
+use crate::i18n::{self, keys};
 use crate::observing_target_list::PossibleTarget;
 use crate::{
     observing_target_list::parse_whats_up_response, observing_target_list::WhatsUpParams,
     sun_moon_times, sun_moon_times::SunMoonTimesResponse, tui, weather, weather::Forecast,
 };
+use anyhow::{Context, Result};
 use chrono::format::StrftimeItems;
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
 
 use promkit::{
     crossterm::{
@@ -14,7 +16,6 @@ use promkit::{
     preset::listbox::Listbox,
     preset::readline::Readline,
 };
-use regex;
 
 use comfy_table::Table;
 
@@ -32,10 +33,15 @@ fn format_output(dt: DateTime<Utc>) -> String {
     dt.format_with_items(items).to_string()
 }
 
-fn create_weather_table() {
+fn create_weather_table() -> Result<()> {
     let _ = disable_raw_mode();
+    println!("\nFetching weather forecast... / Recupero previsioni meteo...");
     let mut table = Table::new();
-    let data = weather::prepare_data().unwrap();
+    let data = weather::prepare_data()
+        .map_err(|e| {
+            eprintln!("Error fetching weather data / Errore nel recupero dati meteo: {}", e);
+            e
+        })?;
     let timezero = format!("{}00", data.init);
     let forecast = data.dataseries;
 
@@ -77,11 +83,17 @@ fn create_weather_table() {
         table.add_row(row);
     }
     println!("{table}");
+    Ok(())
 }
 
-fn generate_sun_moon_times_table() {
+fn generate_sun_moon_times_table() -> Result<()> {
     let _ = disable_raw_mode();
-    let data: SunMoonTimesResponse = sun_moon_times::prepare_data().unwrap();
+    println!("\nFetching sun/moon times... / Recupero orari sole/luna...");
+    let data: SunMoonTimesResponse = sun_moon_times::prepare_data()
+        .map_err(|e| {
+            eprintln!("Error fetching sun/moon times / Errore nel recupero orari: {}", e);
+            e
+        })?;
     println!("All times are {}", data.tzid);
     println!("Sunrise: {}", data.results.sunrise);
     println!("Sunset: {}", data.results.sunset);
@@ -108,22 +120,35 @@ fn generate_sun_moon_times_table() {
         "Astronomical twilight end: {}",
         data.results.astronomical_twilight_end
     );
+    Ok(())
 }
 
 const SCHEDULING: [&str; 5] = ["1", "2", "3", "9", "0"];
 
+/// Generic validator function for menu options
+fn create_menu_validator<'a>(options: &'a [&'a str]) -> impl Fn(&str) -> bool + 'a {
+    move |option: &str| options.contains(&option)
+}
+
+/// Generic error message generator for menu options
+fn create_menu_error_generator<'a>(options: &'a [&'a str]) -> impl Fn(&str) -> String + 'a {
+    move |option: &str| {
+        format!(
+            "Invalid option: {}. Please choose between {}.",
+            option,
+            options.join(", ")
+        )
+    }
+}
+
 // Funzione di validazione
 fn validate_scheduling_menu_option(option: &str) -> bool {
-    SCHEDULING.contains(&option)
+    create_menu_validator(&SCHEDULING)(option)
 }
 
 // Funzione per generare il messaggio di errore
 fn generate_scheduling_menu_error_message(option: &str) -> String {
-    format!(
-        "Invalid option: {}. Please choose between {}.",
-        option,
-        SCHEDULING.join(", ")
-    )
+    create_menu_error_generator(&SCHEDULING)(option)
 }
 
 /// Scheduling Menu function
@@ -133,15 +158,21 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\nScheduling Menu
-1. Weather Forecast
-2. Sun and moon times
-3. Observing target list
-9. Back
-0. Quit"
+        "\n\n\n{}
+1. {}
+2. {}
+3. {}
+9. {}
+0. {}",
+        i18n::t(keys::SCHEDULING_MENU_TITLE),
+        i18n::t(keys::WEATHER_FORECAST),
+        i18n::t(keys::SUN_MOON_TIMES),
+        i18n::t(keys::OBSERVING_TARGET_LIST),
+        i18n::t(keys::BACK),
+        i18n::t(keys::QUIT)
     );
     let mut p = Readline::default()
-        .title("Select an option:")
+        .title(&i18n::t(keys::SELECT_OPTION))
         .validator(
             validate_scheduling_menu_option,
             generate_scheduling_menu_error_message,
@@ -149,10 +180,18 @@ pub fn scheduling_menu() -> Result<(), Box<dyn std::error::Error>> {
         .prompt()?;
     let result = p.run()?;
     match result.as_str() {
-        "1" => create_weather_table(),
-        "2" => generate_sun_moon_times_table(),
+        "1" => {
+            if let Err(e) = create_weather_table() {
+                eprintln!("Error: {}", e);
+            }
+        }
+        "2" => {
+            if let Err(e) = generate_sun_moon_times_table() {
+                eprintln!("Error: {}", e);
+            }
+        }
         "3" => observing_target_list()?,
-        "9" => tui::settings_menu()?,
+        "9" => tui::main_menu()?,
         _ => (),
     }
     Ok(())
@@ -162,16 +201,144 @@ const WEATHER_FORECAST: [&str; 2] = ["9", "0"];
 
 // Funzione di validazione
 fn validate_weather_forecast_option(option: &str) -> bool {
-    WEATHER_FORECAST.contains(&option)
+    create_menu_validator(&WEATHER_FORECAST)(option)
 }
 
 // Funzione per generare il messaggio di errore
 fn generate_weather_forecast_error_message(option: &str) -> String {
-    format!(
-        "Invalid option: {}. Please choose between {}.",
-        option,
-        WEATHER_FORECAST.join(", ")
-    )
+    create_menu_error_generator(&WEATHER_FORECAST)(option)
+}
+
+/// Validates if a date is valid (checks if the date actually exists)
+fn validate_date(year: u32, month: u32, day: u32) -> bool {
+    NaiveDate::from_ymd_opt(year as i32, month, day).is_some()
+}
+
+/// Validates year input
+fn validate_year(year: &str) -> bool {
+    year.parse::<u32>()
+        .map(|y| y >= 1900 && y <= 2200)
+        .unwrap_or(false)
+}
+
+/// Validates month input (1-12)
+fn validate_month(month: &str) -> bool {
+    month.parse::<u32>()
+        .map(|m| m >= 1 && m <= 12)
+        .unwrap_or(false)
+}
+
+/// Validates day input (1-31, will be checked against month/year later)
+fn validate_day(day: &str) -> bool {
+    day.parse::<u32>()
+        .map(|d| d >= 1 && d <= 31)
+        .unwrap_or(false)
+}
+
+/// Validates hour input (0-23)
+fn validate_hour(hour: &str) -> bool {
+    hour.parse::<u32>()
+        .map(|h| h <= 23)
+        .unwrap_or(false)
+}
+
+/// Validates minute input (0-59)
+fn validate_minute(minute: &str) -> bool {
+    minute.parse::<u32>()
+        .map(|m| m <= 59)
+        .unwrap_or(false)
+}
+
+/// Reads and validates year input
+fn read_year() -> Result<String> {
+    let year = Readline::default()
+        .title("Year (YYYY): ")
+        .validator(validate_year, |x| format!("{} is not a valid year (1900-2200)", x))
+        .prompt()
+        .context("Failed to create year prompt")?
+        .run()
+        .context("Failed to read year input")?;
+    Ok(year)
+}
+
+/// Reads and validates month input
+fn read_month() -> Result<String> {
+    let month = Readline::default()
+        .title("Month (MM): ")
+        .validator(validate_month, |x| format!("{} is not a valid month (1-12)", x))
+        .prompt()
+        .context("Failed to create month prompt")?
+        .run()
+        .context("Failed to read month input")?;
+    Ok(month)
+}
+
+/// Reads and validates day input, checking against year and month
+fn read_day(year: &str, month: &str) -> Result<String> {
+    let year_num = year.parse::<u32>()
+        .context("Invalid year for date validation")?;
+    let month_num = month.parse::<u32>()
+        .context("Invalid month for date validation")?;
+    
+    loop {
+        let day = Readline::default()
+            .title("Day (DD): ")
+            .validator(validate_day, |x| format!("{} is not a valid day (1-31)", x))
+            .prompt()
+            .context("Failed to create day prompt")?
+            .run()
+            .context("Failed to read day input")?;
+        
+        // Validate the day against the actual month/year
+        if let Ok(day_num) = day.parse::<u32>() {
+            if validate_date(year_num, month_num, day_num) {
+                return Ok(day);
+            } else {
+                eprintln!("{} is not a valid day for {}/{}", day, month, year);
+                continue;
+            }
+        }
+        return Ok(day);
+    }
+}
+
+/// Reads and validates hour input
+fn read_hour() -> Result<String> {
+    let hour = Readline::default()
+        .title("Hour (HH, 0-23): ")
+        .validator(validate_hour, |x| format!("{} is not a valid hour (0-23)", x))
+        .prompt()
+        .context("Failed to create hour prompt")?
+        .run()
+        .context("Failed to read hour input")?;
+    Ok(hour)
+}
+
+/// Reads and validates minute input
+fn read_minute() -> Result<String> {
+    let minute = Readline::default()
+        .title("Minute (MM, 0-59): ")
+        .validator(validate_minute, |x| format!("{} is not a valid minute (0-59)", x))
+        .prompt()
+        .context("Failed to create minute prompt")?
+        .run()
+        .context("Failed to read minute input")?;
+    Ok(minute)
+}
+
+/// Reads a positive integer input
+fn read_positive_integer(title: &str, field_name: &str) -> Result<String> {
+    let value = Readline::default()
+        .title(title)
+        .validator(
+            |x| x.parse::<u32>().is_ok(),
+            |x| format!("{} is not a valid positive number", x),
+        )
+        .prompt()
+        .with_context(|| format!("Failed to create {} prompt", field_name))?
+        .run()
+        .with_context(|| format!("Failed to read {} input", field_name))?;
+    Ok(value)
 }
 
 /// Weather forecast printing
@@ -179,7 +346,7 @@ pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nWeather Forecast\n\n");
-    create_weather_table();
+    create_weather_table()?;
     let mut p = Readline::default()
         .title("\n9 to go back, 0 to quit:")
         .validator(
@@ -194,171 +361,53 @@ pub fn weather_forecast() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Maps object type string to code
+fn map_object_type_to_code(object_type: &str) -> &str {
+    match object_type {
+        "Asteroid" => "mp",
+        "NEO" => "neo",
+        "Comet" => "cmt",
+        _ => "mp",
+    }
+}
+
+/// Reads object type from user
+fn read_object_type() -> Result<String> {
+    let object_type = Listbox::new(vec!["Asteroid", "NEO", "Comet"])
+        .title("Select object type")
+        .prompt()
+        .context("Failed to create object type prompt")?
+        .run()
+        .context("Failed to read object type input")?;
+    Ok(object_type)
+}
+
 /// Creates the observing target list
 pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nObserving Target List\n\n");
-    let year: String = Readline::default()
-        .title("Year (YYYY): ")
-        .validator(
-            |x| {
-                let rex = regex::Regex::new(r"^\d{4}$").unwrap();
-                rex.is_match(x)
-            },
-            |x| format!("{} is not a valid year", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let month: String = Readline::default()
-        .title("Month (MM): ")
-        .validator(
-            |x| {
-                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
-                rex.is_match(x)
-            },
-            |x| format!("{} is not a valid month", x),
-        )
-        .validator(
-            |x| {
-                let accepted_values = [
-                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
-                ];
-                accepted_values.contains(&x)
-            },
-            |x| format!("{} is not a valid month", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let day: String = Readline::default()
-        .title("Day (DD): ")
-        .validator(
-            |x| {
-                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
-                rex.is_match(x)
-            },
-            |x| format!("{} is not a valid day", x),
-        )
-        .validator(
-            |x| {
-                let accepted_values = [
-                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                    "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
-                    "28", "29", "30", "31",
-                ];
-                accepted_values.contains(&x)
-            },
-            |x| format!("{} is not a valid day", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let hour: String = Readline::default()
-        .title("Hour (HH): ")
-        .validator(
-            |x| {
-                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
-                rex.is_match(x)
-            },
-            |x| format!("{} is not a valid day", x),
-        )
-        .validator(
-            |x| {
-                let accepted_values = [
-                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                    "15", "16", "17", "18", "19", "20", "21", "22", "23",
-                ];
-                accepted_values.contains(&x)
-            },
-            |x| format!("{} is not a valid hour", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let minute: String = Readline::default()
-        .title("Minute (MM): ")
-        .validator(
-            |x| {
-                let rex = regex::Regex::new(r"^\d{1,2}$").unwrap();
-                rex.is_match(x)
-            },
-            |x| format!("{} is not a valid minute", x),
-        )
-        .validator(
-            |x| {
-                let accepted_values = [
-                    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                    "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
-                    "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
-                    "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53",
-                    "54", "55", "56", "57", "58", "59",
-                ];
-                accepted_values.contains(&x)
-            },
-            |x| format!("{} is not a valid minute", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let duration: String = Readline::default()
-        .title("Duration in hours (H or HH): ")
-        .validator(
-            |x| x.parse::<u32>().is_ok(),
-            |x| format!("{} is not a valid number", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let max_objects: String = Readline::default()
-        .title("Maximum number of objects: ")
-        .validator(
-            |x| x.parse::<u32>().is_ok(),
-            |x| format!("{} is not a valid number", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let min_alt: String = Readline::default()
-        .title("Minimum Altitude (deg): ")
-        .validator(
-            |x| x.parse::<u32>().is_ok(),
-            |x| format!("{} is not a valid number", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let solar_elong: String = Readline::default()
-        .title("Maximum Solar elongation (deg): ")
-        .validator(
-            |x| x.parse::<u32>().is_ok(),
-            |x| format!("{} is not a valid number", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let lunar_elong: String = Readline::default()
-        .title("Maximum Lunar elongation (deg): ")
-        .validator(
-            |x| x.parse::<u32>().is_ok(),
-            |x| format!("{} is not a valid number", x),
-        )
-        .prompt()
-        .unwrap()
-        .run()?;
-    let object_type: String = Listbox::new(vec!["Asteroid", "NEO", "Comet"])
-        .title("Select object type")
-        .prompt()
-        .unwrap()
-        .run()?;
-    let object_type_code: &str = match object_type {
-        object_type if object_type.as_str() == "Asteroid" => "mp",
-        object_type if object_type.as_str() == "NEO" => "neo",
-        object_type if object_type.as_str() == "Comet" => "cmt",
-        _ => "mp",
-    };
-    let whats_up_params: WhatsUpParams = WhatsUpParams {
+    
+    // Read date and time inputs
+    let year = read_year()?;
+    let month = read_month()?;
+    let day = read_day(&year, &month)?;
+    let hour = read_hour()?;
+    let minute = read_minute()?;
+    
+    // Read other parameters
+    let duration = read_positive_integer("Duration in hours (H or HH): ", "duration")?;
+    let max_objects = read_positive_integer("Maximum number of objects: ", "max_objects")?;
+    let min_alt = read_positive_integer("Minimum Altitude (deg): ", "min_alt")?;
+    let solar_elong = read_positive_integer("Maximum Solar elongation (deg): ", "solar_elong")?;
+    let lunar_elong = read_positive_integer("Maximum Lunar elongation (deg): ", "lunar_elong")?;
+    
+    // Read object type
+    let object_type = read_object_type()?;
+    let object_type_code = map_object_type_to_code(&object_type);
+    
+    // Build parameters
+    let whats_up_params = WhatsUpParams {
         year,
         month,
         day,
@@ -371,10 +420,28 @@ pub fn observing_target_list() -> Result<(), Box<dyn std::error::Error>> {
         lunar_elong,
         object_type: object_type_code.to_string(),
     };
-    let data: Vec<PossibleTarget> = parse_whats_up_response(&whats_up_params);
-    create_whats_up_list_table(data);
+    
+    // Fetch and display data
+    println!("\nFetching observing target list... / Recupero lista obiettivi osservazione...");
+    let data = parse_whats_up_response(&whats_up_params)
+        .map_err(|e| {
+            eprintln!("Error fetching observing target list / Errore nel recupero lista: {}", e);
+            e
+        })?;
+    
+    if data.is_empty() {
+        println!("\nNo visible objects found for the selected criteria.");
+        println!("Nessun oggetto visibile trovato per i criteri selezionati.");
+    } else {
+        println!("\nFound {} object(s) / Trovato/i {} oggetto/i:", data.len(), data.len());
+        create_whats_up_list_table(data);
+    }
+    
+    // Wait for user input to continue
     let mut p = Readline::default()
-        .title("\n9 to go back, 0 to quit:")
+        .title(&format!("\n9 {} / {}, 0 {} / {}:",
+            i18n::t(keys::BACK), "Indietro",
+            i18n::t(keys::QUIT), "Esci"))
         .validator(
             validate_weather_forecast_option,
             generate_weather_forecast_error_message,
@@ -408,4 +475,92 @@ fn create_whats_up_list_table(data: Vec<PossibleTarget>) {
         table.add_row(row);
     }
     println!("{table}");
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_validate_date() {
+        // Valid dates
+        assert!(validate_date(2000, 1, 1));
+        assert!(validate_date(2000, 2, 29)); // Leap year
+        assert!(validate_date(2024, 12, 31));
+        
+        // Invalid dates
+        assert!(!validate_date(2000, 2, 30)); // February doesn't have 30 days
+        assert!(!validate_date(2001, 2, 29)); // Not a leap year
+        assert!(!validate_date(2000, 13, 1)); // Invalid month
+        assert!(!validate_date(2000, 0, 1)); // Invalid month
+        assert!(!validate_date(2000, 1, 0)); // Invalid day
+        assert!(!validate_date(2000, 1, 32)); // Invalid day
+    }
+
+    #[test]
+    fn test_validate_year() {
+        assert!(validate_year("2000"));
+        assert!(validate_year("2024"));
+        assert!(validate_year("1900"));
+        assert!(validate_year("2200"));
+        
+        assert!(!validate_year("1899")); // Too old
+        assert!(!validate_year("2201")); // Too new
+        assert!(!validate_year("abc")); // Not a number
+        assert!(!validate_year("")); // Empty
+    }
+
+    #[test]
+    fn test_validate_month() {
+        for i in 1..=12 {
+            assert!(validate_month(&i.to_string()));
+        }
+        
+        assert!(!validate_month("0"));
+        assert!(!validate_month("13"));
+        assert!(!validate_month("abc"));
+        assert!(!validate_month(""));
+    }
+
+    #[test]
+    fn test_validate_day() {
+        for i in 1..=31 {
+            assert!(validate_day(&i.to_string()));
+        }
+        
+        assert!(!validate_day("0"));
+        assert!(!validate_day("32"));
+        assert!(!validate_day("abc"));
+        assert!(!validate_day(""));
+    }
+
+    #[test]
+    fn test_validate_hour() {
+        for i in 0..=23 {
+            assert!(validate_hour(&i.to_string()));
+        }
+        
+        assert!(!validate_hour("24"));
+        assert!(!validate_hour("abc"));
+        assert!(!validate_hour(""));
+    }
+
+    #[test]
+    fn test_validate_minute() {
+        for i in 0..=59 {
+            assert!(validate_minute(&i.to_string()));
+        }
+        
+        assert!(!validate_minute("60"));
+        assert!(!validate_minute("abc"));
+        assert!(!validate_minute(""));
+    }
+
+    #[test]
+    fn test_map_object_type_to_code() {
+        assert_eq!(map_object_type_to_code("Asteroid"), "mp");
+        assert_eq!(map_object_type_to_code("NEO"), "neo");
+        assert_eq!(map_object_type_to_code("Comet"), "cmt");
+        assert_eq!(map_object_type_to_code("Unknown"), "mp"); // Default
+    }
 }
