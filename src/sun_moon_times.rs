@@ -35,9 +35,10 @@
 #![warn(missing_docs)]
 
 use crate::settings::Settings;
+use anyhow::{Context, Result};
 use reqwest;
 use serde::Deserialize;
-use serde_json::Result;
+use serde_json;
 
 #[derive(Debug, Deserialize, serde::Serialize)]
 /// Structure with data for Sun, Moon, etc
@@ -90,24 +91,29 @@ pub struct SunMoonTimesResponse {
 }
 
 /// Returns a text string with reponse from sunrise-sunset.org
-fn get_sun_moon_times() -> String {
-    let settings = Settings::new().unwrap();
-    let url: reqwest::Url = reqwest::Url::parse_with_params(
+fn get_sun_moon_times() -> Result<String> {
+    let settings = Settings::new()
+        .context("Failed to load settings")?;
+    let url = reqwest::Url::parse_with_params(
         "https://api.sunrise-sunset.org/json",
         [
             ("lat", settings.observatory.latitude.to_string()),
             ("lng", settings.observatory.longitude.to_string()),
         ],
     )
-    .unwrap();
-    let response = reqwest::blocking::get(url).unwrap().text();
-    response.unwrap()
+    .context("Failed to parse sunrise-sunset URL")?;
+    let response = reqwest::blocking::get(url)
+        .context("Failed to fetch sun/moon times")?
+        .text()
+        .context("Failed to read sun/moon times response")?;
+    Ok(response)
 }
 
 /// Returns a json with data for Sunset, sunrise, etc
 pub fn prepare_data() -> Result<SunMoonTimesResponse> {
-    let response: String = get_sun_moon_times();
+    let response = get_sun_moon_times()?;
     serde_json::from_str(&response)
+        .context("Failed to parse sun/moon times JSON")
 }
 
 #[cfg(test)]
@@ -116,12 +122,16 @@ mod test {
 
     #[test]
     fn test_get_sun_moon_times() {
-        assert!(get_sun_moon_times().contains("solar_noon"));
+        let result = get_sun_moon_times();
+        assert!(result.is_ok());
+        assert!(result.unwrap().contains("solar_noon"));
     }
 
     #[test]
     fn test_prepare_data() {
-        let data = prepare_data().unwrap();
-        assert_eq!(data.status, "OK");
+        let data = prepare_data();
+        assert!(data.is_ok());
+        let response = data.unwrap();
+        assert_eq!(response.status, "OK");
     }
 }
