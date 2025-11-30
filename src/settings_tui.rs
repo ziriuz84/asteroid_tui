@@ -1,4 +1,7 @@
-use crate::{settings::General, settings::Observatory, settings::Settings, tui};
+use crate::i18n::{self, keys};
+use crate::settings::{default_mpc_auth_token, General, Observatory, Settings};
+use crate::tui;
+use anyhow::Context;
 use promkit::{
     crossterm::{
         execute,
@@ -16,18 +19,30 @@ use std::num::ParseIntError;
 
 const OPTIONS_GENERAL_SETTINGS: [&str; 3] = ["1", "9", "0"];
 
+/// Generic validator function for menu options
+fn create_menu_validator<'a>(options: &'a [&'a str]) -> impl Fn(&str) -> bool + 'a {
+    move |option: &str| options.contains(&option)
+}
+
+/// Generic error message generator for menu options
+fn create_menu_error_generator<'a>(options: &'a [&'a str]) -> impl Fn(&str) -> String + 'a {
+    move |option: &str| {
+        format!(
+            "Invalid option: {}. Please choose between {}.",
+            option,
+            options.join(", ")
+        )
+    }
+}
+
 // Funzione di validazione
 fn validate_settings_menu_option(option: &str) -> bool {
-    OPTIONS_GENERAL_SETTINGS.contains(&option)
+    create_menu_validator(&OPTIONS_GENERAL_SETTINGS)(option)
 }
 
 // Funzione per generare il messaggio di errore
 fn generate_settings_menu_error_message(option: &str) -> String {
-    format!(
-        "Invalid option: {}. Please choose between {}.",
-        option,
-        OPTIONS_GENERAL_SETTINGS.join(", ")
-    )
+    create_menu_error_generator(&OPTIONS_GENERAL_SETTINGS)(option)
 }
 
 /// Creates and prints general settings menu, asking for prompt
@@ -35,13 +50,17 @@ pub fn general_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!(
-        "\n\n\nGeneral Settings
+        "\n\n\n{} {}
 1. Language
-9. Back
-0. Quit"
+9. {}
+0. {}",
+        i18n::t(keys::GENERAL),
+        i18n::t(keys::SETTINGS_MENU_TITLE),
+        i18n::t(keys::BACK),
+        i18n::t(keys::QUIT)
     );
     let mut p = Readline::default()
-        .title("Select an option:")
+        .title(&i18n::t(keys::SELECT_OPTION))
         .validator(
             validate_settings_menu_option,
             generate_settings_menu_error_message,
@@ -61,13 +80,15 @@ fn language_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
     println!("\n\n\nLanguage Settings");
-    let mut p = Listbox::new(vec!["en"])
-        .title("Select language:")
+    let mut p = Listbox::new(vec!["en", "it"])
+        .title("Select language / Seleziona lingua:")
         .listbox_lines(5)
         .prompt()?;
-    let mut set: Settings = Settings::new().unwrap();
-    set.set_lang(p.run().unwrap())
-        .unwrap_or_else(|error| println!("Error: {}", error));
+    let mut set = Settings::new()
+        .map_err(|e| format!("Failed to load settings: {}", e))?;
+    set.set_lang(p.run().context("Failed to read language selection")?)
+        .map_err(|e| format!("Failed to save language: {}", e))?;
+    println!("Language saved successfully / Lingua salvata con successo");
     Ok(())
 }
 
@@ -83,6 +104,7 @@ impl TryFrom<Vec<&str>> for Settings {
 
         let general = General {
             lang: "".to_string(),
+            mpc_auth_token: default_mpc_auth_token(),
         };
 
         let observatory = Observatory {
@@ -150,165 +172,121 @@ impl TryFrom<Vec<&str>> for Settings {
     }
 }
 
+/// Creates a text editor state for a form field
+fn create_form_field(prefix: String) -> text_editor::State {
+    text_editor::State {
+        texteditor: Default::default(),
+        history: Default::default(),
+        prefix,
+        mask: Default::default(),
+        prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
+        active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
+        inactive_char_style: StyleBuilder::new().build(),
+        edit_mode: Default::default(),
+        word_break_chars: Default::default(),
+        lines: Default::default(),
+    }
+}
+
+/// Validates latitude value (-90 to 90)
+fn validate_latitude(lat: &str) -> bool {
+    lat.parse::<f32>()
+        .map(|l| l >= -90.0 && l <= 90.0)
+        .unwrap_or(false)
+}
+
+/// Validates longitude value (-180 to 180)
+fn validate_longitude(lon: &str) -> bool {
+    lon.parse::<f32>()
+        .map(|l| l >= -180.0 && l <= 180.0)
+        .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_validate_latitude() {
+        assert!(validate_latitude("0"));
+        assert!(validate_latitude("45.5"));
+        assert!(validate_latitude("-45.5"));
+        assert!(validate_latitude("90"));
+        assert!(validate_latitude("-90"));
+        
+        assert!(!validate_latitude("91"));
+        assert!(!validate_latitude("-91"));
+        assert!(!validate_latitude("abc"));
+        assert!(!validate_latitude(""));
+    }
+
+    #[test]
+    fn test_validate_longitude() {
+        assert!(validate_longitude("0"));
+        assert!(validate_longitude("120.5"));
+        assert!(validate_longitude("-120.5"));
+        assert!(validate_longitude("180"));
+        assert!(validate_longitude("-180"));
+        
+        assert!(!validate_longitude("181"));
+        assert!(!validate_longitude("-181"));
+        assert!(!validate_longitude("abc"));
+        assert!(!validate_longitude(""));
+    }
+}
+
 /// Creates and prints observatory settings menu, asking for prompt
 pub fn observatory_settings_menu() -> Result<(), Box<dyn std::error::Error>> {
     let _ = disable_raw_mode();
     execute!(std::io::stdout(), Clear(ClearType::All))?;
-    let actual_settings: Settings = Settings::new().unwrap();
+    let actual_settings = Settings::new()
+        .map_err(|e| format!("Failed to load settings: {}", e))?;
     println!("\n\n\nObservatory Settings");
     let mut p = Form::new([
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("Place Name ({}): ", actual_settings.get_place()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("Latitude ({}): ", actual_settings.get_latitude()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("Longitude ({}): ", actual_settings.get_longitude()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("Altitude ({}): ", actual_settings.get_altitude()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!(
-                "Observatory Name: ({}): ",
-                actual_settings.get_observatory_name()
-            ),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("Observer Name: ({}): ", actual_settings.get_observer_name()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("MPC Code: ({}): ", actual_settings.get_mpc_code()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!(
-                "North Altitude ({}): ",
-                actual_settings.get_north_altitude()
-            ),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!(
-                "South Altitude ({}): ",
-                actual_settings.get_south_altitude()
-            ),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("East Altitude ({}): ", actual_settings.get_east_altitude()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
-        text_editor::State {
-            texteditor: Default::default(),
-            history: Default::default(),
-            prefix: format!("West Altitude ({}): ", actual_settings.get_west_altitude()),
-            mask: Default::default(),
-            prefix_style: StyleBuilder::new().fgc(Color::DarkRed).build(),
-            active_char_style: StyleBuilder::new().fgc(Color::Red).build(),
-            inactive_char_style: StyleBuilder::new().build(),
-            edit_mode: Default::default(),
-            word_break_chars: Default::default(),
-            lines: Default::default(),
-        },
+        create_form_field(format!("Place Name ({}): ", actual_settings.get_place())),
+        create_form_field(format!("Latitude ({}): ", actual_settings.get_latitude())),
+        create_form_field(format!("Longitude ({}): ", actual_settings.get_longitude())),
+        create_form_field(format!("Altitude ({}): ", actual_settings.get_altitude())),
+        create_form_field(format!(
+            "Observatory Name: ({}): ",
+            actual_settings.get_observatory_name()
+        )),
+        create_form_field(format!("Observer Name: ({}): ", actual_settings.get_observer_name())),
+        create_form_field(format!("MPC Code: ({}): ", actual_settings.get_mpc_code())),
+        create_form_field(format!(
+            "North Altitude ({}): ",
+            actual_settings.get_north_altitude()
+        )),
+        create_form_field(format!(
+            "South Altitude ({}): ",
+            actual_settings.get_south_altitude()
+        )),
+        create_form_field(format!("East Altitude ({}): ", actual_settings.get_east_altitude())),
+        create_form_field(format!("West Altitude ({}): ", actual_settings.get_west_altitude())),
     ])
     .prompt()?;
     let response = p.run()?;
-    let mut new_vec: Vec<&str> = Vec::new();
-    for s in &response {
-        new_vec.push(s);
+    
+    // Validate latitude and longitude if provided
+    if !response[1].is_empty() {
+        if !validate_latitude(&response[1]) {
+            eprintln!("Warning: Latitude must be between -90 and 90 degrees");
+        }
     }
-    let mut settings: Settings = Settings::try_from(new_vec)?;
-    let _ = settings.set_settings(settings.clone());
+    if !response[2].is_empty() {
+        if !validate_longitude(&response[2]) {
+            eprintln!("Warning: Longitude must be between -180 and 180 degrees");
+        }
+    }
+    
+    let new_vec: Vec<&str> = response.iter().map(|s| s.as_str()).collect();
+    let mut settings = Settings::try_from(new_vec)
+        .map_err(|e| format!("Failed to parse settings: {}", e))?;
+    
+    settings.set_settings(settings.clone())
+        .map_err(|e| format!("Failed to save settings: {}", e))?;
 
-    println!("Parsed settings: {:?}", settings);
+    println!("Settings saved successfully / Impostazioni salvate con successo");
 
     Ok(())
 }
