@@ -26,5 +26,7 @@ pub mod utils;
 /// Tui library
 pub mod tui;
 
+/// Internationalization library
+pub mod i18n;
 /// NeoCP library
 pub mod neocp;
