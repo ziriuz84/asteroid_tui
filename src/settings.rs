@@ -1,7 +1,6 @@
 use config::{Config, ConfigError, File};
 use rand::Rng;
 use std::fs;
-use std::io::prelude::*;
 
 //TODO: Add minimum altitude on different directions
 
@@ -9,9 +8,19 @@ use std::io::prelude::*;
 /// General option structure
 ///
 /// * `lang`: language
+/// * `mpc_auth_token`: MPC authentication token (optional, can be set via environment variable MPC_AUTH_TOKEN)
 pub struct General {
     /// Language
     pub lang: String,
+    /// MPC authentication token (optional)
+    #[serde(default = "default_mpc_auth_token")]
+    pub mpc_auth_token: String,
+}
+
+/// Default MPC auth token - tries environment variable first, then falls back to hardcoded value
+pub(crate) fn default_mpc_auth_token() -> String {
+    std::env::var("MPC_AUTH_TOKEN")
+        .unwrap_or_else(|_| "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D".to_string())
 }
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
@@ -70,6 +79,7 @@ fn default_settings() -> Settings {
     let mut rng = rand::rng();
     let default_general: General = General {
         lang: "en".to_string(),
+        mpc_auth_token: default_mpc_auth_token(),
     };
     let default_observatory: Observatory = match test {
         false => Observatory {
@@ -130,39 +140,43 @@ fn parse_integer64(value: &str) -> Result<i64, Box<dyn std::error::Error>> {
 /// * `key`: The key to be modified
 /// * `value`: The value to be set
 pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Get config directory
+    let config_dir = dirs::config_local_dir()
+        .ok_or("Failed to get config directory")?;
+    let config_path = config_dir
+        .join("asteroid_tui")
+        .join("config.toml");
+    let config_path_str = config_path
+        .to_str()
+        .ok_or("Failed to convert config path to string")?;
+
     // Read the file
-    let contents = fs::read_to_string(
-        dirs::config_local_dir()
-            .unwrap()
-            .join("asteroid_tui")
-            .join("config.toml")
-            .to_str()
-            .unwrap(),
-    )?;
+    let contents = fs::read_to_string(config_path_str)?;
 
     // Parse the TOML contents into a HashMap
     let mut settings: toml::Value = toml::from_str(&contents)?;
 
     // Modify the field
-    /*
-    if let Some(table) = settings.get_mut(key) {
-        table.insert("new_value".to_string(), value.to_string());
-    } else {
-        settings.insert(key.to_string(), toml::Value::String(value.to_string()));
-    }
-    */
-
     match key.as_str() {
         "lang" => settings["general"]["lang"] = toml::Value::String(value.to_string()),
         "place" => settings["observatory"]["place"] = toml::Value::String(value.to_string()),
         "latitude" => {
-            settings["observatory"]["latitude"] = toml::Value::Float(parse_float64(value).unwrap())
+            settings["observatory"]["latitude"] = toml::Value::Float(
+                parse_float64(value)
+                    .map_err(|e| format!("Failed to parse latitude: {}", e))?
+            )
         }
         "longitude" => {
-            settings["observatory"]["longitude"] = toml::Value::Float(parse_float64(value).unwrap())
+            settings["observatory"]["longitude"] = toml::Value::Float(
+                parse_float64(value)
+                    .map_err(|e| format!("Failed to parse longitude: {}", e))?
+            )
         }
         "altitude" => {
-            settings["observatory"]["altitude"] = toml::Value::Float(parse_float64(value).unwrap())
+            settings["observatory"]["altitude"] = toml::Value::Float(
+                parse_float64(value)
+                    .map_err(|e| format!("Failed to parse altitude: {}", e))?
+            )
         }
         "observatory_name" => {
             settings["observatory"]["observatory_name"] = toml::Value::String(value.to_string())
@@ -172,20 +186,28 @@ pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std:
         }
         "mpc_code" => settings["observatory"]["mpc_code"] = toml::Value::String(value.to_string()),
         "north_altitude" => {
-            settings["observatory"]["north_altitude"] =
-                toml::Value::Integer(parse_integer64(value).unwrap())
+            settings["observatory"]["north_altitude"] = toml::Value::Integer(
+                parse_integer64(value)
+                    .map_err(|e| format!("Failed to parse north_altitude: {}", e))?
+            )
         }
         "south_altitude" => {
-            settings["observatory"]["south_altitude"] =
-                toml::Value::Integer(parse_integer64(value).unwrap())
+            settings["observatory"]["south_altitude"] = toml::Value::Integer(
+                parse_integer64(value)
+                    .map_err(|e| format!("Failed to parse south_altitude: {}", e))?
+            )
         }
         "east_altitude" => {
-            settings["observatory"]["east_altitude"] =
-                toml::Value::Integer(parse_integer64(value).unwrap())
+            settings["observatory"]["east_altitude"] = toml::Value::Integer(
+                parse_integer64(value)
+                    .map_err(|e| format!("Failed to parse east_altitude: {}", e))?
+            )
         }
         "west_altitude" => {
-            settings["observatory"]["west_altitude"] =
-                toml::Value::Integer(parse_integer64(value).unwrap())
+            settings["observatory"]["west_altitude"] = toml::Value::Integer(
+                parse_integer64(value)
+                    .map_err(|e| format!("Failed to parse west_altitude: {}", e))?
+            )
         }
         _ => {}
     }
@@ -194,77 +216,44 @@ pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std:
     let updated_contents = toml::to_string(&settings)?;
 
     // Write the updated contents back to the file
-    fs::write(
-        dirs::config_local_dir()
-            .unwrap()
-            .join("asteroid_tui")
-            .join("config.toml")
-            .to_str()
-            .unwrap(),
-        updated_contents,
-    )?;
+    fs::write(config_path_str, updated_contents)?;
 
     Ok(())
 }
 impl Settings {
     /// Constructor for Settings struct
     pub fn new() -> Result<Self, ConfigError> {
-        if fs::metadata(
-            dirs::config_local_dir()
-                .unwrap()
-                .join("asteroid_tui")
-                .to_str()
-                .unwrap(),
-        )
-        .is_err()
-        {
-            if let Err(err) = fs::create_dir(
-                dirs::config_local_dir()
-                    .unwrap()
-                    .join("asteroid_tui")
-                    .to_str()
-                    .unwrap(),
-            ) {
-                println!("Error in creating directory: {}", err);
-            } else {
-                let mut file = fs::File::create(
-                    dirs::config_local_dir()
-                        .unwrap()
-                        .join("asteroid_tui")
-                        .join("config.toml")
-                        .to_str()
-                        .unwrap(),
-                )
-                .unwrap();
-                let default_settings: Settings = default_settings();
-                let default = toml::to_string(&default_settings).unwrap();
-                file.write_all(default.as_bytes())
-                    .expect("Error in writing to config file");
-            }
-            // } else {
-            //     let mut file = fs::File::create(
-            //         dirs::config_local_dir()
-            //             .unwrap()
-            //             .join("asteroid_tui")
-            //             .join("config.toml")
-            //             .to_str()
-            //             .unwrap(),
-            //     )
-            //     .unwrap();
-            //     let default_settings: Settings = default_settings();
-            //     let default = toml::to_string(&default_settings).unwrap();
-            //     file.write_all(default.as_bytes())
-            //         .expect("Error in writing to config file");
+        let config_dir = dirs::config_local_dir()
+            .ok_or_else(|| ConfigError::Message("Failed to get config directory".to_string()))?;
+        let asteroid_tui_dir = config_dir.join("asteroid_tui");
+        let config_file = asteroid_tui_dir.join("config.toml");
+        
+        // Check if directory exists, create if not
+        if fs::metadata(&asteroid_tui_dir).is_err() {
+            fs::create_dir_all(&asteroid_tui_dir)
+                .map_err(|e| ConfigError::Message(format!("Failed to create config directory: {}", e)))?;
         }
+        
+        // Check if config file exists, create with defaults if not
+        if fs::metadata(&config_file).is_err() {
+            let default_settings = default_settings();
+            let default_toml = toml::to_string(&default_settings)
+                .map_err(|e| ConfigError::Message(format!("Failed to serialize default settings: {}", e)))?;
+            
+            let config_file_str = config_file
+                .to_str()
+                .ok_or_else(|| ConfigError::Message("Failed to convert config file path to string".to_string()))?;
+            
+            fs::write(config_file_str, default_toml)
+                .map_err(|e| ConfigError::Message(format!("Failed to write default config file: {}", e)))?;
+        }
+        
+        let config_file_str = config_file
+            .to_str()
+            .ok_or_else(|| ConfigError::Message("Failed to convert config file path to string".to_string()))?;
+        
         let s = Config::builder()
-            .add_source(File::with_name(
-                dirs::config_local_dir()
-                    .unwrap()
-                    .join("asteroid_tui")
-                    .join("config.toml")
-                    .to_str()
-                    .unwrap(),
-            ))
+            .add_source(File::with_name(config_file_str))
             .build()?;
         s.try_deserialize()
     }
@@ -281,6 +270,12 @@ impl Settings {
         //modify_field_in_file("lang".to_string(), &lang).expect("Error in setting lang, value");
         modify_field_in_file("lang".to_string(), &lang)?;
         Ok(())
+    }
+
+    /// Get MPC auth token from settings or environment variable
+    pub fn get_mpc_auth_token(&self) -> String {
+        std::env::var("MPC_AUTH_TOKEN")
+            .unwrap_or_else(|_| self.general.mpc_auth_token.clone())
     }
 
     /// Sets settings in config.toml
