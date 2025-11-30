@@ -25,3 +25,6 @@ pub mod utils;
 
 /// Tui library
 pub mod tui;
+
+/// Internationalization library
+pub mod i18n;
