@@ -31,5 +31,6 @@ All notable changes to this project will be documented in this file.
 
 ### Chores
 
+- **release:** 1.0.0 ([13ef509](https://github.com/ziriuz84/asteroid_tui/commit/13ef509babfa023450e27bebc8bf1a89df5d88df))
 - **release:** 1.0.0 ([1c321b2](https://github.com/ziriuz84/asteroid_tui/commit/1c321b2685510caffa48073394b84f8dadae93d2))
 - **dependencies:** update promkit to version 0.8.0 ([9a76083](https://github.com/ziriuz84/asteroid_tui/commit/9a760838b7fb73206c50bb4a21581b3b4390002c))
