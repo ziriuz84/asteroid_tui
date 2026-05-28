@@ -1,3 +1,15 @@
+## [1.1.1](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.1.1) (2026-05-29)
+
+### Tests
+
+- test: add offline fixture tests and optional network smoke ([8f8946d](https://github.com/ziriuz84/asteroid_tui/commit/8f8946dec16ca9def877aae5c2b58e9f3d0cae0c))
+
+### Chores
+
+- chore(ci): remove redundant GitHub Actions workflows ([7952b8d](https://github.com/ziriuz84/asteroid_tui/commit/7952b8d78b23c72b64b5c83fede86a2b8f7de4ad))
+---
+
+
 ## [1.1.0](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.1.0) (2026-05-28)
 
 ### Features
