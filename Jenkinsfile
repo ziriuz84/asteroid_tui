@@ -124,8 +124,9 @@ pipeline {
                         echo "Cargo.toml version ($CARGO_VER) does not match tag ($TAG_VER)"
                         exit 1
                     fi
-                    git checkout -- Cargo.lock
-                    cargo publish --dry-run --locked
+                    PKG=$(grep -E '^name[[:space:]]*=' Cargo.toml | head -1 | sed -E 's/^name[[:space:]]*=[[:space:]]*"([^"]+)".*/\\1/')
+                    cargo update -p "${PKG}" --precise "${CARGO_VER}"
+                    cargo publish --dry-run --locked --allow-dirty
                 '''
             }
         }
@@ -177,8 +178,10 @@ pipeline {
                 withCredentials([string(credentialsId: 'crates-io-token', variable: 'CARGO_REGISTRY_TOKEN')]) {
                     sh '''#!/usr/bin/env bash
                         set -euo pipefail
-                        git checkout -- Cargo.lock
-                        cargo publish --locked --verbose
+                        CARGO_VER=$(grep -E '^version' Cargo.toml | head -1 | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+')
+                        PKG=$(grep -E '^name[[:space:]]*=' Cargo.toml | head -1 | sed -E 's/^name[[:space:]]*=[[:space:]]*"([^"]+)".*/\\1/')
+                        cargo update -p "${PKG}" --precise "${CARGO_VER}"
+                        cargo publish --locked --verbose --allow-dirty
                     '''
                 }
             }
