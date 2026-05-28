@@ -1,3 +1,22 @@
+## [1.1.0](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.1.0) (2026-05-28)
+
+### Features
+
+- feat(observing): scrape MPC authenticity token for What's Up ([db831ec](https://github.com/ziriuz84/asteroid_tui/commit/db831ecf1c2137676333a89ebbcfe880ff75316c))
+
+### Code Refactoring
+
+- license: switch from MIT to GPL-3.0-or-later ([ffb1737](https://github.com/ziriuz84/asteroid_tui/commit/ffb173795f066efcf0e5e428d91f617d721c6dc8))
+
+### Documentation
+
+- docs: add rustdoc examples for public APIs ([a0d6bb5](https://github.com/ziriuz84/asteroid_tui/commit/a0d6bb5a89b3b5e5ba941699854f2612f2d5b13c))
+- docs: streamline CONTRIBUTING and extend CI checks ([49594d1](https://github.com/ziriuz84/asteroid_tui/commit/49594d1d5fd86a15228312d152890b9aa5dae498))
+- docs: add user guide assets and expand README ([17550ed](https://github.com/ziriuz84/asteroid_tui/commit/17550ed543817ac1d9ef2d805b8909c9bf103af8))
+- docs: improve rustdoc and package metadata ([3336fd9](https://github.com/ziriuz84/asteroid_tui/commit/3336fd9ef08cc9710c65eefd50cd9564879b12eb))
+---
+
+
 ## [1.0.6](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.6) (2026-05-28)
 
 ### Code Refactoring
