@@ -157,7 +157,11 @@ pipeline {
                 expression { env.RELEASE_TAG ==~ /^v\d+\.\d+\.\d+$/ }
             }
             steps {
-                withCredentials([string(credentialsId: 'github-credentials', variable: 'GH_TOKEN')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-credentials',
+                    usernameVariable: 'GITHUB_USER',
+                    passwordVariable: 'GH_TOKEN'
+                )]) {
                     sh '''
                         gh release create "${RELEASE_TAG}" \
                             --repo "${GITHUB_REPO}" \
