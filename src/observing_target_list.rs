@@ -194,9 +194,35 @@ fn get_observing_target_list(params: &WhatsUpParams) -> Result<String> {
 //TODO: Add altitude filtering on different directions
 //TODO: Write better documentation
 
-/// Returns data from what's up list of MPC
+/// Fetches and parses the MPC What's Up target list for the given parameters.
 ///
-/// * `params`: WhatsupParams struct with all requested parameters
+/// Uses the MPC auth token from settings (`MPC_AUTH_TOKEN` or config).
+///
+/// # Errors
+///
+/// Returns an error if the HTTP request fails or the HTML response cannot be parsed.
+///
+/// # Examples
+///
+/// ```no_run
+/// use asteroid_tui::observing_target_list::{WhatsUpParams, parse_whats_up_response};
+///
+/// let params = WhatsUpParams {
+///     year: "2026".to_string(),
+///     month: "5".to_string(),
+///     day: "28".to_string(),
+///     hour: "22".to_string(),
+///     minute: "0".to_string(),
+///     max_objects: "10".to_string(),
+///     duration: "4".to_string(),
+///     min_alt: "20".to_string(),
+///     solar_elong: "90".to_string(),
+///     lunar_elong: "60".to_string(),
+///     object_type: "mp".to_string(),
+/// };
+/// let targets = parse_whats_up_response(&params)?;
+/// # Ok::<(), anyhow::Error>(())
+/// ```
 pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
     let mut objects: Vec<PossibleTarget> = Vec::new();
     let data = get_observing_target_list(params)?;

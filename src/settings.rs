@@ -221,7 +221,21 @@ pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std:
     Ok(())
 }
 impl Settings {
-    /// Constructor for Settings struct
+    /// Loads settings from `~/.config/asteroid_tui/config.toml`, creating defaults on first run.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConfigError`] if the config directory or file cannot be read or parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use asteroid_tui::settings::Settings;
+    ///
+    /// let settings = Settings::new()?;
+    /// println!("Language: {}", settings.get_lang());
+    /// # Ok::<(), config::ConfigError>(())
+    /// ```
     pub fn new() -> Result<Self, ConfigError> {
         let config_dir = dirs::config_local_dir()
             .ok_or_else(|| ConfigError::Message("Failed to get config directory".to_string()))?;

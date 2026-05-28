@@ -395,7 +395,23 @@ fn get_forecast() -> Result<String> {
     Ok(response)
 }
 
-/// Returns the ForecastResponse struct with data
+/// Fetches and parses the 7timer forecast for the configured observatory.
+///
+/// Requires network access and valid latitude/longitude in settings.
+///
+/// # Errors
+///
+/// Returns an error if the HTTP request fails or the response cannot be parsed as JSON.
+///
+/// # Examples
+///
+/// ```no_run
+/// use asteroid_tui::weather;
+///
+/// let forecast = weather::prepare_data()?;
+/// println!("Init time: {}", forecast.init);
+/// # Ok::<(), anyhow::Error>(())
+/// ```
 pub fn prepare_data() -> Result<ForecastResponse> {
     let response = get_forecast()?;
     serde_json::from_str(&response)

@@ -6,6 +6,9 @@
 //! The `asteroid-tui` binary provides an interactive menu for weather forecasts,
 //! sun and moon times, observatory settings, and MPC observing target lists.
 //! Modules in this crate implement those features and may be reused by integrations.
+//!
+//! User guide: [README.md](https://github.com/ziriuz84/asteroid_tui/blob/main/README.md).
+//! Developer overview: [docs/architecture.md](https://github.com/ziriuz84/asteroid_tui/blob/main/docs/architecture.md).
 
 #![warn(missing_docs)]
 
