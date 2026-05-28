@@ -1,3 +1,11 @@
+## [1.0.5](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.5) (2026-05-28)
+
+### Code Refactoring
+
+- ci: sync Cargo.lock before cargo publish ([6a84118](https://github.com/ziriuz84/asteroid_tui/commit/6a841181c7f627f4389ea0bf75862c08d12dbf8a))
+---
+
+
 ## [1.0.4](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.4) (2026-05-28)
 
 ### Code Refactoring
