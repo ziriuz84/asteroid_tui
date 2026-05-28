@@ -1,6 +1,6 @@
 [package]
 name = "asteroid-tui"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Sirio Negri <ziriuz84@gmail.com>"]
 description = "Tools for minor planets researchers: observation scheduling and planning"
 readme = "README.md"
