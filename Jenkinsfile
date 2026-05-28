@@ -7,12 +7,34 @@ pipeline {
         GITHUB_REPO = 'ziriuz84/asteroid_tui'
         SONAR_HOST_URL = 'https://sq.casapomininegri.it'
         SONAR_SCANNER_VERSION = '6.2.1.4610'
+        IS_RELEASE = 'false'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+                sh 'git fetch origin --tags --force'
+            }
+        }
+
+        stage('Detect Release Tag') {
+            steps {
+                script {
+                    def tag = sh(
+                        script: "git tag --points-at HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1",
+                        returnStdout: true
+                    ).trim()
+                    if (tag) {
+                        env.TAG_NAME = tag
+                        env.IS_RELEASE = 'true'
+                        echo "Release tag on HEAD: ${tag}"
+                    } else {
+                        env.TAG_NAME = ''
+                        env.IS_RELEASE = 'false'
+                        echo 'No release tag on HEAD; skipping publish and GitHub release stages'
+                    }
+                }
             }
         }
 
@@ -23,13 +45,6 @@ pipeline {
                     rustup component add clippy llvm-tools-preview
                     cargo install cargo-tarpaulin --locked
                 '''
-            }
-        }
-
-        stage('Validate Publish') {
-            when { buildingTag() }
-            steps {
-                sh 'cargo publish --dry-run --locked'
             }
         }
 
@@ -99,8 +114,28 @@ pipeline {
         //     }
         // }
 
+        stage('Validate Publish') {
+            when {
+                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+            }
+            steps {
+                sh '''#!/usr/bin/env bash
+                    set -euo pipefail
+                    CARGO_VER=$(grep -E '^version' Cargo.toml | head -1 | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+')
+                    TAG_VER="${TAG_NAME#v}"
+                    if [ "$CARGO_VER" != "$TAG_VER" ]; then
+                        echo "Cargo.toml version ($CARGO_VER) does not match tag ($TAG_VER)"
+                        exit 1
+                    fi
+                    cargo publish --dry-run --locked
+                '''
+            }
+        }
+
         stage('Package Release') {
-            when { buildingTag() }
+            when {
+                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+            }
             steps {
                 sh '''
                     VERSION="${TAG_NAME#v}"
@@ -119,7 +154,9 @@ pipeline {
         }
 
         stage('GitHub Release') {
-            when { buildingTag() }
+            when {
+                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+            }
             steps {
                 withCredentials([string(credentialsId: 'github-credentials', variable: 'GH_TOKEN')]) {
                     sh '''
@@ -135,7 +172,9 @@ pipeline {
         }
 
         stage('Publish crates.io') {
-            when { buildingTag() }
+            when {
+                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+            }
             steps {
                 withCredentials([string(credentialsId: 'crates-io-token', variable: 'CARGO_REGISTRY_TOKEN')]) {
                     sh 'cargo publish --locked --verbose'
