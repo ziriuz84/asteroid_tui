@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'master' }
+    agent any
 
     environment {
         CARGO_TERM_COLOR = 'always'
