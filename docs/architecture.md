@@ -38,7 +38,7 @@ flowchart TB
 
 On first run, `Settings::new()` creates `~/.config/asteroid_tui/config.toml` with defaults if the file is missing. See [config.example.toml](config.example.toml) for a commented template.
 
-`MPC_AUTH_TOKEN` in the environment overrides `general.mpc_auth_token` in the config file.
+What's Up uses a scraped `authenticity_token` from the MPC form page, with a built-in fallback if scraping fails.
 
 ## External services
 
@@ -46,7 +46,7 @@ On first run, `Settings::new()` creates `~/.config/asteroid_tui/config.toml` wit
 |---------|---------|----------|
 | [7timer.info](http://www.7timer.info/) | `weather` | Observatory lat/lon |
 | [api.sunrise-sunset.org](https://api.sunrise-sunset.org/) | `sun_moon_times` | Observatory lat/lon |
-| [MPC What's Up](https://www.minorplanetcenter.net/whatsup/) | `observing_target_list` | MPC auth token, site parameters |
+| [MPC What's Up](https://www.minorplanetcenter.net/whatsup/) | `observing_target_list` | Network; observatory site parameters in config |
 
 ## Release and CI
 

@@ -6,8 +6,7 @@
 # UI language: "en" or "it"
 lang = "en"
 
-# MPC token for What's Up (optional if MPC_AUTH_TOKEN is set in the environment)
-mpc_auth_token = ""
+# Legacy field (unused): mpc_auth_token is no longer required for What's Up.
 
 [observatory]
 place = "La Spezia"

@@ -2,12 +2,96 @@ use crate::{settings::Settings, utils::is_visible};
 use anyhow::{anyhow, Context, Result};
 use chrono::{Datelike, TimeZone, Timelike, Utc};
 use percent_encoding::percent_decode_str;
+use regex::Regex;
 use reqwest;
 use serde::{Deserialize, Serialize};
-//use serde_json::Result;
-//use serde_repr::{Deserialize_repr, Serialize_repr};
-//use std::fmt::Display;
-//use std::{fmt, thread::current};
+use std::time::Duration;
+
+const MPC_WHATSUP_INDEX_URL: &str = "https://www.minorplanetcenter.net/whatsup/index";
+const MPC_WHATSUP_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Last-resort token if scraping fails or MPC markup changes (POST may still fail).
+const MPC_WHATSUP_AUTH_TOKEN_FALLBACK: &str = "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D";
+
+fn mpc_http_client() -> Result<reqwest::blocking::Client> {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        reqwest::header::USER_AGENT,
+        reqwest::header::HeaderValue::from_static(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+             (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        ),
+    );
+    headers.insert(
+        reqwest::header::ACCEPT,
+        reqwest::header::HeaderValue::from_static(
+            "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+        ),
+    );
+    reqwest::blocking::Client::builder()
+        .default_headers(headers)
+        .timeout(MPC_WHATSUP_REQUEST_TIMEOUT)
+        .build()
+        .context("Failed to build HTTP client for MPC")
+}
+
+/// Extract Rails `authenticity_token` from What's Up index HTML.
+fn extract_authenticity_token_from_html(html: &str) -> String {
+    let document = scraper::Html::parse_document(html);
+    if let Ok(selector) = scraper::Selector::parse(r#"input[name="authenticity_token"]"#) {
+        for element in document.select(&selector) {
+            if let Some(value) = element.value().attr("value") {
+                if !value.is_empty() {
+                    return value.to_string();
+                }
+            }
+        }
+    }
+
+    if let Ok(re) = Regex::new(r#"name=["']authenticity_token["'][^>]*value=["']([^"']+)["']"#) {
+        if let Some(caps) = re.captures(html) {
+            if let Some(m) = caps.get(1) {
+                return m.as_str().to_string();
+            }
+        }
+    }
+
+    if let Ok(re) = Regex::new(r#"<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']"#) {
+        if let Some(caps) = re.captures(html) {
+            if let Some(m) = caps.get(1) {
+                return m.as_str().to_string();
+            }
+        }
+    }
+
+    String::new()
+}
+
+/// GET the What's Up form page and scrape a fresh `authenticity_token`.
+fn scrape_whatsup_authenticity_token() -> String {
+    let client = match mpc_http_client() {
+        Ok(client) => client,
+        Err(_) => return String::new(),
+    };
+    let response = match client.get(MPC_WHATSUP_INDEX_URL).send() {
+        Ok(response) if response.status().is_success() => response,
+        _ => return String::new(),
+    };
+    let html = match response.text() {
+        Ok(html) => html,
+        Err(_) => return String::new(),
+    };
+    extract_authenticity_token_from_html(&html)
+}
+
+/// Scrape token from MPC, or use hardcoded fallback when scraping fails.
+fn resolve_whatsup_authenticity_token() -> (String, bool) {
+    let scraped = scrape_whatsup_authenticity_token();
+    if !scraped.is_empty() {
+        return (scraped, false);
+    }
+    (MPC_WHATSUP_AUTH_TOKEN_FALLBACK.to_string(), true)
+}
 
 /// Indices of table columns from whatsup.html:
 pub mod table_indices {
@@ -141,22 +225,26 @@ impl Default for PossibleTarget {
 ///
 /// * `params`: WhatsupParams struct with all requested parameters
 fn get_observing_target_list(params: &WhatsUpParams) -> Result<String> {
-    let settings = Settings::new()
-        .context("Failed to load settings")?;
+    let settings = Settings::new().context("Failed to load settings")?;
     let mut full_params: Vec<(&str, &str)> = Vec::new();
     let encoded_param = "%E2%9C%93";
     let decoded = percent_decode_str(encoded_param)
         .decode_utf8_lossy()
         .into_owned();
     full_params.push(("utf8", decoded.as_str()));
-    
-    // Get auth token from settings (which checks environment variable first)
-    let auth_token = settings.get_mpc_auth_token();
+
+    let (auth_token, used_fallback) = resolve_whatsup_authenticity_token();
+    if used_fallback {
+        eprintln!(
+            "Warning: could not scrape MPC authenticity_token; using built-in fallback / \
+             Avviso: impossibile recuperare authenticity_token da MPC; uso fallback incorporato"
+        );
+    }
     let decoded_auth_token = percent_decode_str(&auth_token)
         .decode_utf8_lossy()
         .into_owned();
     full_params.push(("authenticity_token", decoded_auth_token.as_str()));
-    
+
     let latitude = settings.get_latitude().to_string();
     full_params.push(("latitude", latitude.as_str()));
     let longitude = settings.get_longitude().to_string();
@@ -173,21 +261,21 @@ fn get_observing_target_list(params: &WhatsUpParams) -> Result<String> {
     full_params.push(("lunar_elong", params.lunar_elong.as_str()));
     full_params.push(("object_type", params.object_type.as_str()));
     full_params.push(("submit", "Submit"));
-    
+
     let url = reqwest::Url::parse_with_params(
         "https://www.minorplanetcenter.net/whatsup/index",
         full_params,
     )
     .context("Failed to create MPC URL")?;
-    
-    let client = reqwest::blocking::Client::new();
+
+    let client = mpc_http_client()?;
     let response = client
         .post(url)
         .send()
         .context("Failed to send request to MPC")?
         .text()
         .context("Failed to read MPC response")?;
-    
+
     Ok(response)
 }
 
@@ -196,7 +284,8 @@ fn get_observing_target_list(params: &WhatsUpParams) -> Result<String> {
 
 /// Fetches and parses the MPC What's Up target list for the given parameters.
 ///
-/// Uses the MPC auth token from settings (`MPC_AUTH_TOKEN` or config).
+/// Scrapes a fresh `authenticity_token` from the MPC What's Up form (with a built-in
+/// fallback if scraping fails). Observatory coordinates come from settings.
 ///
 /// # Errors
 ///
@@ -227,32 +316,27 @@ pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTar
     let mut objects: Vec<PossibleTarget> = Vec::new();
     let data = get_observing_target_list(params)?;
     let document = scraper::Html::parse_document(data.as_str());
-    
+
     let table_item_selector = scraper::Selector::parse("td")
         .map_err(|e| anyhow!("Failed to parse table item selector: {:?}", e))?;
     let rows_selector = scraper::Selector::parse("#main table:nth-child(1) tr:not(:first-child)")
         .map_err(|e| anyhow!("Failed to parse rows selector: {:?}", e))?;
-    
+
     let rows: Vec<scraper::ElementRef<'_>> = document.select(&rows_selector).collect();
-    
+
     // Parse date once for all objects
     let date = Utc
         .with_ymd_and_hms(
-            params.year.parse()
-                .context("Failed to parse year")?,
-            params.month.parse()
-                .context("Failed to parse month")?,
-            params.day.parse()
-                .context("Failed to parse day")?,
-            params.hour.parse()
-                .context("Failed to parse hour")?,
-            params.minute.parse()
-                .context("Failed to parse minute")?,
+            params.year.parse().context("Failed to parse year")?,
+            params.month.parse().context("Failed to parse month")?,
+            params.day.parse().context("Failed to parse day")?,
+            params.hour.parse().context("Failed to parse hour")?,
+            params.minute.parse().context("Failed to parse minute")?,
             0,
         )
         .single()
         .context("Invalid date/time")?;
-    
+
     for row in rows {
         let cells: Vec<scraper::ElementRef<'_>> = row.select(&table_item_selector).collect();
         match create_possible_target(cells) {
@@ -271,7 +355,7 @@ pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTar
             }
         }
     }
-    
+
     Ok(objects)
 }
 
@@ -313,6 +397,13 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_extract_authenticity_token_from_example_html() {
+        let html = include_str!("../response_examples/whatsup.html");
+        let token = extract_authenticity_token_from_html(html);
+        assert_eq!(token, "6jL1Ruhw/ENf7P8I7VSi5YgwcNKf8+8ps2vvYtjf/Us=");
+    }
 
     #[test]
     fn test_get_observing_target_list() {

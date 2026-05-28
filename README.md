@@ -79,7 +79,7 @@ Configure your observatory under **Settings** before using scheduling features t
 
 1. Run `asteroid-tui` once so the default config file is created.
 2. Open **Settings → Observatory** and set latitude, longitude, altitude, and MPC code.
-3. Set language and MPC token under **Settings → General**, or export `MPC_AUTH_TOKEN`.
+3. Set language under **Settings → General** (`en` / `it`).
 4. Use **Scheduling** for weather, sun/moon times, or the observing target list.
 
 ### Screenshots
@@ -94,29 +94,21 @@ Key settings:
 
 | Section | Purpose |
 |---------|---------|
-| `[general]` | `lang` (`en` or `it`), optional `mpc_auth_token` |
+| `[general]` | `lang` (`en` or `it`) |
 | `[observatory]` | `latitude`, `longitude`, `altitude`, `mpc_code`, horizon limits (`north_altitude`, etc.) |
 
-**MPC authentication:** for What's Up and related services, set a valid token either in config or via environment variable (env takes precedence):
+**What's Up authentication:** the app fetches a fresh CSRF `authenticity_token` from the MPC form page before each request. If scraping fails, it falls back to a built-in token (you may see a warning on stderr).
 
-```bash
-export MPC_AUTH_TOKEN="your-token-here"
-```
-
-You can also change language and observatory data from the in-app **Settings** menus.
+You can change language and observatory data from the in-app **Settings** menus.
 
 See [docs/config.example.toml](docs/config.example.toml) for a full commented example.
-
-### Obtaining an MPC token
-
-What's Up requires a Minor Planet Center account token. Set it in config (`mpc_auth_token`) or via `MPC_AUTH_TOKEN` (recommended). The environment variable takes precedence over the config file.
 
 ## Troubleshooting
 
 | Problem | What to check |
 |---------|----------------|
 | Weather or sun/moon errors | Observatory latitude/longitude in **Settings → Observatory** |
-| Target list fails or is empty | Valid `MPC_AUTH_TOKEN`, date/time filters, horizon limits |
+| Target list fails or is empty | Network access to MPC, date/time filters, horizon limits in **Settings → Observatory** |
 | Wrong language | `lang` in config or **Settings → General** (`en` / `it`) |
 | Old version shown at startup | Rebuild or reinstall; version comes from the package metadata |
 

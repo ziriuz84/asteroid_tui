@@ -8,19 +8,18 @@ use std::fs;
 /// General option structure
 ///
 /// * `lang`: language
-/// * `mpc_auth_token`: MPC authentication token (optional, can be set via environment variable MPC_AUTH_TOKEN)
+/// * `mpc_auth_token`: legacy field (unused by What's Up; token is scraped automatically)
 pub struct General {
     /// Language
     pub lang: String,
-    /// MPC authentication token (optional)
+    /// Legacy MPC token field (unused by What's Up)
     #[serde(default = "default_mpc_auth_token")]
     pub mpc_auth_token: String,
 }
 
-/// Default MPC auth token - tries environment variable first, then falls back to hardcoded value
+/// Default for legacy `mpc_auth_token` field (empty; What's Up scrapes its own token).
 pub(crate) fn default_mpc_auth_token() -> String {
-    std::env::var("MPC_AUTH_TOKEN")
-        .unwrap_or_else(|_| "W5eBzzw9Clj4tJVzkz0z%2F2EK18jvSS%2BffHxZpAshylg%3D".to_string())
+    std::env::var("MPC_AUTH_TOKEN").unwrap_or_default()
 }
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, Clone)]
