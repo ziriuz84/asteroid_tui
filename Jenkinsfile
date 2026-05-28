@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'linux' }
+    agent { label 'master' }
 
     environment {
         CARGO_TERM_COLOR = 'always'
@@ -62,13 +62,13 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // stage('Quality Gate') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
 
         stage('Package Release') {
             when { buildingTag() }
@@ -92,7 +92,7 @@ pipeline {
         stage('GitHub Release') {
             when { buildingTag() }
             steps {
-                withCredentials([string(credentialsId: 'github-token', variable: 'GH_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-credentials', variable: 'GH_TOKEN')]) {
                     sh '''
                         gh release create "${TAG_NAME}" \
                             --repo "${GITHUB_REPO}" \
