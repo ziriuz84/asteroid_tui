@@ -1,33 +1,37 @@
 // Copyright (C) 2024-2026 Sirio Negri
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Crate to import all pub mods
+//! Terminal tools for minor-planet observation scheduling and planning.
+//!
+//! The `asteroid-tui` binary provides an interactive menu for weather forecasts,
+//! sun and moon times, observatory settings, and MPC observing target lists.
+//! Modules in this crate implement those features and may be reused by integrations.
 
 #![warn(missing_docs)]
 
-/// Settings Handler
+/// Application and observatory configuration ([`settings::Settings`]).
 pub mod settings;
 
-/// Settings Tui library
+/// Interactive menus for general and observatory settings.
 pub mod settings_tui;
 
-/// Scheduling tui library
+/// Scheduling menus: weather, sun/moon times, and target lists.
 pub mod scheduling_tui;
 
-/// Sun Moon Times library
+/// Sunrise, sunset, and related times from observatory coordinates.
 pub mod sun_moon_times;
 
-/// Weather library
+/// Astronomical weather forecast (7timer) for the configured site.
 pub mod weather;
 
-/// Observing Target List library
+/// MPC What's Up observing target list parsing and display.
 pub mod observing_target_list;
 
-/// General utilities library
+/// Coordinate conversion and visibility helpers.
 pub mod utils;
 
-/// Tui library
+/// Main and settings menu entry points.
 pub mod tui;
 
-/// Internationalization library
+/// English and Italian UI strings.
 pub mod i18n;
