@@ -5,6 +5,8 @@ pipeline {
         CARGO_TERM_COLOR = 'always'
         RUST_BACKTRACE = '1'
         GITHUB_REPO = 'ziriuz84/asteroid_tui'
+        SONAR_HOST_URL = 'https://sq.casapomininegri.it'
+        SONAR_SCANNER_VERSION = '6.2.1.4610'
     }
 
     stages {
@@ -51,17 +53,44 @@ pipeline {
             }
         }
 
+
+        // Informational only: SonarQube never fails the build (findings or scanner errors).
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    def sonarVersion = env.TAG_NAME ? env.TAG_NAME.replaceFirst('^v', '') : env.BUILD_NUMBER
-                    withSonarQubeEnv('SonarQube-CasaPominiNegri') {
-                        sh "sonar-scanner -Dsonar.projectVersion=${sonarVersion}"
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE', message: 'SonarQube analysis failed (non-blocking)') {
+                    withCredentials([
+                        string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')
+                    ]) {
+                        sh '''#!/usr/bin/env bash
+                            set -euo pipefail
+
+                            ensure_sonar_scanner() {
+                                if command -v sonar-scanner >/dev/null 2>&1; then
+                                    return 0
+                                fi
+                                local scanner_zip="/tmp/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip"
+                                local scanner_dir="/tmp/sonar-scanner-${SONAR_SCANNER_VERSION}-linux-x64"
+                                echo "Downloading SonarScanner ${SONAR_SCANNER_VERSION}..."
+                                curl -fsSL \
+                                    "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip" \
+                                    -o "${scanner_zip}"
+                                rm -rf "${scanner_dir}"
+                                unzip -q "${scanner_zip}" -d /tmp
+                                export PATH="${scanner_dir}/bin:${PATH}"
+                            }
+
+                            ensure_sonar_scanner
+
+                            sonar-scanner \
+                                -Dsonar.host.url="${SONAR_HOST_URL}" \
+                                -Dsonar.token="${SONAR_TOKEN}" \
+                                -Dsonar.projectVersion="${GIT_COMMIT:-unknown}" \
+                                -Dsonar.qualitygate.wait=false
+                        '''
                     }
                 }
             }
         }
-
         // stage('Quality Gate') {
         //     steps {
         //         timeout(time: 5, unit: 'MINUTES') {
