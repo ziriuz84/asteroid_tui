@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/ziriuz84/asteroid_tui/discussions
+    about: Questions, ideas, and general help (preferred over issues for Q&A)
+  - name: Contributing guide
+    url: https://github.com/ziriuz84/asteroid_tui/blob/main/CONTRIBUTING.md
+    about: Read before opening a pull request

@@ -1,0 +1,39 @@
+name: Documentation
+description: Report missing, unclear, or incorrect documentation
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for README, `docs/`, [docs.rs](https://docs.rs/asteroid-tui), or in-app UI strings — not for runtime bugs (use **Bug Report**) or new features (use **Feature Request**).
+
+  - type: dropdown
+    id: doc_location
+    attributes:
+      label: Where is the documentation?
+      options:
+        - README.md
+        - docs/ (architecture, config examples, etc.)
+        - docs.rs / rustdoc in source
+        - In-app UI (English / Italian)
+        - CHANGELOG or release notes
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue_description
+    attributes:
+      label: What is wrong or missing?
+      description: Be specific about the page, section, or module
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested improvement (optional)
+      description: Wording, structure, or content you would like to see
+    validations:
+      required: false

@@ -4,6 +4,19 @@ When contributing to this repository, please first discuss substantial changes v
 
 Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions with the project.
 
+## Opening issues
+
+Use the [issue templates](https://github.com/ziriuz84/asteroid_tui/issues/new/choose) when reporting problems or ideas:
+
+| Kind of report | Template |
+|----------------|----------|
+| Something broken | **Bug Report** |
+| New capability or improvement | **Feature Request** |
+| README, `docs/`, rustdoc, or UI copy | **Documentation** |
+| Questions, help, informal ideas | [GitHub Discussions](https://github.com/ziriuz84/asteroid_tui/discussions) |
+
+Blank issues are disabled; pick the closest template so maintainers get the context they need.
+
 ## Development setup
 
 Prerequisites: Rust (stable), Cargo.

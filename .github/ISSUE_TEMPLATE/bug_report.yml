@@ -1,0 +1,104 @@
+name: Bug Report
+description: Report something that is not working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        **Version:** run `asteroid-tui` and note the `Version x.y.z` line printed at startup.
+
+        **Security:** do **not** paste your MPC API token or other secrets. If you share config, redact `mpc_token` and similar fields.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From the startup line, e.g. `1.1.0`
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: How did you install asteroid-tui?
+      options:
+        - crates.io (`cargo install asteroid-tui`)
+        - GitHub release binary
+        - Built from source (`cargo install --path .` or `cargo build --release`)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: OS and terminal
+      description: OS distribution, terminal emulator, and terminal size if relevant
+      placeholder: "e.g. Arch Linux, foot, 120x40"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected_area
+    attributes:
+      label: Affected area
+      options:
+        - Weather forecast
+        - Sun and moon times
+        - Observing target list
+        - Settings (general or observatory)
+        - Startup / main menu
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ui_language
+    attributes:
+      label: UI language when the issue occurred
+      options:
+        - English
+        - Italian
+        - Not sure / not applicable
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include menu choices (e.g. Main → Scheduling → Weather) and any config changes
+      placeholder: |
+        1. Run `asteroid-tui`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs actual behavior
+      description: What you expected to happen, and what happened instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error messages
+      description: Full terminal output, stack traces, or bilingual `Error:` lines
+    validations:
+      required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config (optional)
+      description: Observatory coordinates, horizon limits, language — **no MPC token**
+      placeholder: "Redact mpc_token. Paste only sections relevant to the bug."
+    validations:
+      required: false
