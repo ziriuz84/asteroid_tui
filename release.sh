@@ -172,8 +172,12 @@ update_version() {
     
     if [ "$dry_run" = "true" ]; then
         sed -E -e 's/^version[[:space:]]*=.*/version = "'"$new_version"'"/' Cargo.toml | head -5
+        echo "Would run: cargo update -p <crate> --precise $new_version"
     else
         sed -i -E 's/^version[[:space:]]*=.*/version = "'"$new_version"'"/' Cargo.toml
+        local pkg
+        pkg=$(grep -E '^name[[:space:]]*=' Cargo.toml | head -1 | sed -E 's/^name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')
+        cargo update -p "$pkg" --precise "$new_version"
     fi
     
     success "Version updated to $new_version"
@@ -363,10 +367,10 @@ create_commit() {
     
     if [ "$dry_run" = "true" ]; then
         echo "Would run:"
-        echo "  git add Cargo.toml CHANGELOG.md"
+        echo "  git add Cargo.toml Cargo.lock CHANGELOG.md"
         echo "  git commit -m 'chore: release v$version'"
     else
-        git add Cargo.toml CHANGELOG.md
+        git add Cargo.toml Cargo.lock CHANGELOG.md
         git commit -m "chore: release v$version"
         success "Commit created"
     fi
