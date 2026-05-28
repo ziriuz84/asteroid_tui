@@ -7,7 +7,6 @@ pipeline {
         GITHUB_REPO = 'ziriuz84/asteroid_tui'
         SONAR_HOST_URL = 'https://sq.casapomininegri.it'
         SONAR_SCANNER_VERSION = '6.2.1.4610'
-        IS_RELEASE = 'false'
     }
 
     stages {
@@ -26,12 +25,12 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     if (tag) {
-                        env.TAG_NAME = tag
-                        env.IS_RELEASE = 'true'
+                        env.RELEASE_TAG = tag
+                        writeFile file: '.release-tag', text: tag
                         echo "Release tag on HEAD: ${tag}"
                     } else {
-                        env.TAG_NAME = ''
-                        env.IS_RELEASE = 'false'
+                        env.RELEASE_TAG = ''
+                        sh 'rm -f .release-tag'
                         echo 'No release tag on HEAD; skipping publish and GitHub release stages'
                     }
                 }
@@ -116,13 +115,16 @@ pipeline {
 
         stage('Validate Publish') {
             when {
-                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+                expression {
+                    fileExists('.release-tag') &&
+                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
+                }
             }
             steps {
                 sh '''#!/usr/bin/env bash
                     set -euo pipefail
                     CARGO_VER=$(grep -E '^version' Cargo.toml | head -1 | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+')
-                    TAG_VER="${TAG_NAME#v}"
+                    TAG_VER="${RELEASE_TAG#v}"
                     if [ "$CARGO_VER" != "$TAG_VER" ]; then
                         echo "Cargo.toml version ($CARGO_VER) does not match tag ($TAG_VER)"
                         exit 1
@@ -134,11 +136,14 @@ pipeline {
 
         stage('Package Release') {
             when {
-                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+                expression {
+                    fileExists('.release-tag') &&
+                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
+                }
             }
             steps {
                 sh '''
-                    VERSION="${TAG_NAME#v}"
+                    VERSION="${RELEASE_TAG#v}"
                     ARCH="x86_64-unknown-linux-gnu"
                     PACKAGE_DIR="dist/asteroid-tui-${VERSION}-${ARCH}"
 
@@ -155,14 +160,17 @@ pipeline {
 
         stage('GitHub Release') {
             when {
-                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+                expression {
+                    fileExists('.release-tag') &&
+                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
+                }
             }
             steps {
                 withCredentials([string(credentialsId: 'github-credentials', variable: 'GH_TOKEN')]) {
                     sh '''
-                        gh release create "${TAG_NAME}" \
+                        gh release create "${RELEASE_TAG}" \
                             --repo "${GITHUB_REPO}" \
-                            --title "asteroid-tui ${TAG_NAME}" \
+                            --title "asteroid-tui ${RELEASE_TAG}" \
                             --generate-notes \
                             dist/asteroid-tui-*.tar.gz \
                             dist/asteroid-tui-*.tar.gz.sha256
@@ -173,7 +181,10 @@ pipeline {
 
         stage('Publish crates.io') {
             when {
-                expression { env.IS_RELEASE == 'true' && env.TAG_NAME?.trim() }
+                expression {
+                    fileExists('.release-tag') &&
+                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
+                }
             }
             steps {
                 withCredentials([string(credentialsId: 'crates-io-token', variable: 'CARGO_REGISTRY_TOKEN')]) {
