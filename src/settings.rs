@@ -134,22 +134,16 @@ fn parse_integer64(value: &str) -> Result<i64, Box<dyn std::error::Error>> {
     }
 }
 
-/// Modifies field in config.toml file
-///
-/// * `key`: The key to be modified
-/// * `value`: The value to be set
-pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std::error::Error>> {
-    // Get config directory
-    let config_dir = dirs::config_local_dir()
-        .ok_or("Failed to get config directory")?;
-    let config_path = config_dir
-        .join("asteroid_tui")
-        .join("config.toml");
+/// Modifies a field in the config file at `config_path`.
+pub fn modify_field_at_path(
+    config_path: &std::path::Path,
+    key: String,
+    value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config_path_str = config_path
         .to_str()
         .ok_or("Failed to convert config path to string")?;
 
-    // Read the file
     let contents = fs::read_to_string(config_path_str)?;
 
     // Parse the TOML contents into a HashMap
@@ -219,6 +213,14 @@ pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std:
 
     Ok(())
 }
+
+/// Modifies field in `~/.config/asteroid_tui/config.toml`.
+pub fn modify_field_in_file(key: String, value: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let config_dir = dirs::config_local_dir().ok_or("Failed to get config directory")?;
+    let config_path = config_dir.join("asteroid_tui").join("config.toml");
+    modify_field_at_path(&config_path, key, value)
+}
+
 impl Settings {
     /// Loads settings from `~/.config/asteroid_tui/config.toml`, creating defaults on first run.
     ///
@@ -267,6 +269,23 @@ impl Settings {
         
         let s = Config::builder()
             .add_source(File::with_name(config_file_str))
+            .build()?;
+        s.try_deserialize()
+    }
+
+    /// Deserializes settings from a TOML string (for tests and tooling).
+    pub fn from_toml_str(toml: &str) -> Result<Self, ConfigError> {
+        toml::from_str(toml)
+            .map_err(|e| ConfigError::Message(format!("Failed to parse TOML: {}", e)))
+    }
+
+    /// Loads settings from a specific config file path.
+    pub fn from_config_file(path: &std::path::Path) -> Result<Self, ConfigError> {
+        let path_str = path.to_str().ok_or_else(|| {
+            ConfigError::Message("Failed to convert config path to string".to_string())
+        })?;
+        let s = Config::builder()
+            .add_source(File::with_name(path_str))
             .build()?;
         s.try_deserialize()
     }
@@ -388,27 +407,27 @@ impl Settings {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::io::Write;
 
     #[test]
-    fn test_new_settings() {
-        let s = Settings::new().unwrap();
-        assert!(s.observatory.place.is_ascii());
+    fn test_from_toml_str_example_config() {
+        let toml = include_str!("../docs/config.example.toml");
+        let s = Settings::from_toml_str(toml).unwrap();
+        assert_eq!(s.get_lang(), "en");
+        assert_eq!(s.get_place(), "La Spezia");
+        assert!((*s.get_latitude() - 44.1).abs() < f32::EPSILON);
+        assert!(s.get_north_altitude().is_positive());
     }
 
     #[test]
-    fn test_get_values() {
-        let s = Settings::new().unwrap();
-        assert!(s.get_lang().is_ascii());
-        assert!(s.get_place().is_ascii());
-        assert!(s.get_observatory_name().is_ascii());
-        assert!(s.get_observer_name().is_ascii());
-        assert!(s.get_mpc_code().is_ascii());
-        assert!(s.get_latitude().is_finite());
-        assert!(s.get_longitude().is_finite());
-        assert!(s.get_altitude().is_finite());
-        assert!(s.get_north_altitude().is_positive());
-        assert!(s.get_south_altitude().is_positive());
-        assert!(s.get_east_altitude().is_positive());
-        assert!(s.get_west_altitude().is_positive());
+    fn test_modify_field_at_path() {
+        let mut file = tempfile::NamedTempFile::new().unwrap();
+        let toml = include_str!("../docs/config.example.toml");
+        file.write_all(toml.as_bytes()).unwrap();
+
+        modify_field_at_path(file.path(), "lang".to_string(), "it").unwrap();
+        let contents = fs::read_to_string(file.path()).unwrap();
+        let updated = Settings::from_toml_str(&contents).unwrap();
+        assert_eq!(updated.get_lang(), "it");
     }
 }

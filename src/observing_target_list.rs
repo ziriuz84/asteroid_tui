@@ -1,4 +1,7 @@
-use crate::{settings::Settings, utils::is_visible};
+use crate::{
+    settings::{Observatory, Settings},
+    utils::is_visible_with_observatory,
+};
 use anyhow::{anyhow, Context, Result};
 use chrono::{Datelike, TimeZone, Timelike, Utc};
 use percent_encoding::percent_decode_str;
@@ -312,19 +315,22 @@ fn get_observing_target_list(params: &WhatsUpParams) -> Result<String> {
 /// let targets = parse_whats_up_response(&params)?;
 /// # Ok::<(), anyhow::Error>(())
 /// ```
-pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
+/// Parses MPC What's Up HTML into targets, filtering by observatory horizon limits.
+pub fn parse_whats_up_html(
+    html: &str,
+    params: &WhatsUpParams,
+    observatory: &Observatory,
+) -> Result<Vec<PossibleTarget>> {
     let mut objects: Vec<PossibleTarget> = Vec::new();
-    let data = get_observing_target_list(params)?;
-    let document = scraper::Html::parse_document(data.as_str());
+    let document = scraper::Html::parse_document(html);
 
     let table_item_selector = scraper::Selector::parse("td")
         .map_err(|e| anyhow!("Failed to parse table item selector: {:?}", e))?;
-    let rows_selector = scraper::Selector::parse("#main table:nth-child(1) tr:not(:first-child)")
+    let rows_selector = scraper::Selector::parse("#main table tr")
         .map_err(|e| anyhow!("Failed to parse rows selector: {:?}", e))?;
+    let designation_link_selector = scraper::Selector::parse("td a[href*='show_object']")
+        .map_err(|e| anyhow!("Failed to parse designation link selector: {:?}", e))?;
 
-    let rows: Vec<scraper::ElementRef<'_>> = document.select(&rows_selector).collect();
-
-    // Parse date once for all objects
     let date = Utc
         .with_ymd_and_hms(
             params.year.parse().context("Failed to parse year")?,
@@ -337,26 +343,36 @@ pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTar
         .single()
         .context("Invalid date/time")?;
 
-    for row in rows {
+    for row in document.select(&rows_selector) {
+        if row.select(&designation_link_selector).next().is_none() {
+            continue;
+        }
         let cells: Vec<scraper::ElementRef<'_>> = row.select(&table_item_selector).collect();
         match create_possible_target(cells) {
             Ok(object) => {
-                if is_visible(
-                    &object.ra.replace(" ", ":"),
-                    &object.dec.replace(" ", ":"),
+                if is_visible_with_observatory(
+                    &object.ra.replace(' ', ":"),
+                    &object.dec.replace(' ', ":"),
                     date,
+                    observatory,
                 ) {
                     objects.push(object);
                 }
             }
             Err(e) => {
-                // Log error but continue processing other objects
                 eprintln!("Warning: Failed to create object: {}", e);
             }
         }
     }
 
     Ok(objects)
+}
+
+/// Fetches and parses the MPC What's Up target list for the given parameters.
+pub fn parse_whats_up_response(params: &WhatsUpParams) -> Result<Vec<PossibleTarget>> {
+    let settings = Settings::new().map_err(|e| anyhow!("Failed to load settings: {}", e))?;
+    let data = get_observing_target_list(params)?;
+    parse_whats_up_html(&data, params, &settings.observatory)
 }
 
 fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<PossibleTarget> {
@@ -398,6 +414,38 @@ fn create_possible_target(item: Vec<scraper::ElementRef<'_>>) -> Result<Possible
 mod test {
     use super::*;
 
+    fn fixture_observatory() -> Observatory {
+        Observatory {
+            place: "La Spezia".to_string(),
+            latitude: 44.09727,
+            longitude: 9.7737,
+            altitude: 200.0,
+            observatory_name: "Test".to_string(),
+            observer_name: "Test".to_string(),
+            mpc_code: "123".to_string(),
+            north_altitude: 10,
+            south_altitude: 10,
+            east_altitude: 10,
+            west_altitude: 10,
+        }
+    }
+
+    fn fixture_whats_up_params() -> WhatsUpParams {
+        WhatsUpParams {
+            year: "2025".to_string(),
+            month: "1".to_string(),
+            day: "15".to_string(),
+            hour: "0".to_string(),
+            minute: "0".to_string(),
+            duration: "1".to_string(),
+            max_objects: "10".to_string(),
+            min_alt: "10".to_string(),
+            solar_elong: "0".to_string(),
+            lunar_elong: "0".to_string(),
+            object_type: "mp".to_string(),
+        }
+    }
+
     #[test]
     fn test_extract_authenticity_token_from_example_html() {
         let html = include_str!("../response_examples/whatsup.html");
@@ -406,19 +454,36 @@ mod test {
     }
 
     #[test]
-    fn test_get_observing_target_list() {
+    fn test_parse_whats_up_html_from_fixture() {
+        let html = include_str!("../response_examples/whatsup.html");
+        let params = fixture_whats_up_params();
+        let observatory = fixture_observatory();
+        let objects = parse_whats_up_html(html, &params, &observatory).unwrap();
+        assert!(!objects.is_empty());
+        assert!(
+            objects
+                .iter()
+                .any(|o| o.designation.contains("Eunomia"))
+        );
+        let eunomia = objects
+            .iter()
+            .find(|o| o.designation.contains("Eunomia"))
+            .unwrap();
+        assert!((eunomia.magnitude - 9.0).abs() < f32::EPSILON);
+    }
+
+    #[cfg(feature = "network-tests")]
+    #[test]
+    fn test_get_observing_target_list_live() {
         let result = get_observing_target_list(&WhatsUpParams::default());
         assert!(result.is_ok());
         assert!(result.unwrap().contains("Designation"));
     }
 
+    #[cfg(feature = "network-tests")]
     #[test]
-    fn test_parse_whats_up_response() {
+    fn test_parse_whats_up_response_live() {
         let result = parse_whats_up_response(&WhatsUpParams::default());
-        // Test that the function doesn't panic and returns a valid result
-        // Note: The result may be empty depending on observatory settings and current data
         assert!(result.is_ok());
-        let _objects = result.unwrap();
-        // Just verify we got a Vec, even if empty
     }
 }

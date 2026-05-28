@@ -61,7 +61,7 @@ pub struct Forecast {
 /// * `dataseries`: an array of Forecast instances
 pub struct ForecastResponse {
     /// Product type
-    product: String,
+    pub product: String,
     /// Initial reference time
     pub init: String,
     /// Data array with forecast values
@@ -412,10 +412,14 @@ fn get_forecast() -> Result<String> {
 /// println!("Init time: {}", forecast.init);
 /// # Ok::<(), anyhow::Error>(())
 /// ```
+/// Parses a 7timer JSON forecast response string.
+pub fn parse_forecast_json(response: &str) -> Result<ForecastResponse> {
+    serde_json::from_str(response).context("Failed to parse forecast JSON")
+}
+
+/// Fetches and parses the 7timer forecast for the configured observatory.
 pub fn prepare_data() -> Result<ForecastResponse> {
-    let response = get_forecast()?;
-    serde_json::from_str(&response)
-        .context("Failed to parse forecast JSON")
+    parse_forecast_json(&get_forecast()?)
 }
 
 #[cfg(test)]
@@ -423,14 +427,24 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_get_forecast() {
+    fn test_parse_forecast_from_fixture() {
+        let json = include_str!("../response_examples/7timer.json");
+        let forecast = parse_forecast_json(json).unwrap();
+        assert_eq!(forecast.product, "astro");
+        assert!(!forecast.dataseries.is_empty());
+    }
+
+    #[cfg(feature = "network-tests")]
+    #[test]
+    fn test_get_forecast_live() {
         let result = get_forecast();
         assert!(result.is_ok());
         assert!(result.unwrap().contains("astro"));
     }
 
+    #[cfg(feature = "network-tests")]
     #[test]
-    fn test_prepare_data() {
+    fn test_prepare_data_live() {
         let data = prepare_data();
         assert!(data.is_ok());
         let forecast = data.unwrap();

@@ -30,6 +30,12 @@ cargo clippy -- -D warnings
 cargo doc --no-deps
 ```
 
+Tests are offline by default (fixtures in `response_examples/`). To run live API smoke tests (7timer, sunrise-sunset, MPC):
+
+```bash
+cargo test --features network-tests
+```
+
 Optional: open local API docs with `cargo doc --no-deps --open`.
 
 ## Documentation expectations

@@ -125,6 +125,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_repr",
+ "tempfile",
  "toml",
  "urlencoding",
 ]

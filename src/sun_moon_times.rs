@@ -85,7 +85,8 @@ pub struct SunMoonTimes {
 pub struct SunMoonTimesResponse {
     /// Results with data
     pub results: SunMoonTimes,
-    status: String,
+    /// API status (e.g. `"OK"`)
+    pub status: String,
     /// Timezone specified
     pub tzid: String,
 }
@@ -109,11 +110,14 @@ fn get_sun_moon_times() -> Result<String> {
     Ok(response)
 }
 
+/// Parses a sunrise-sunset.org JSON response string.
+pub fn parse_sun_moon_json(response: &str) -> Result<SunMoonTimesResponse> {
+    serde_json::from_str(response).context("Failed to parse sun/moon times JSON")
+}
+
 /// Returns a json with data for Sunset, sunrise, etc
 pub fn prepare_data() -> Result<SunMoonTimesResponse> {
-    let response = get_sun_moon_times()?;
-    serde_json::from_str(&response)
-        .context("Failed to parse sun/moon times JSON")
+    parse_sun_moon_json(&get_sun_moon_times()?)
 }
 
 #[cfg(test)]
@@ -121,14 +125,24 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_get_sun_moon_times() {
+    fn test_parse_sun_moon_from_fixture() {
+        let json = include_str!("../response_examples/sunrise_sunset.json");
+        let response = parse_sun_moon_json(json).unwrap();
+        assert_eq!(response.status, "OK");
+        assert!(response.results.solar_noon.contains(':'));
+    }
+
+    #[cfg(feature = "network-tests")]
+    #[test]
+    fn test_get_sun_moon_times_live() {
         let result = get_sun_moon_times();
         assert!(result.is_ok());
         assert!(result.unwrap().contains("solar_noon"));
     }
 
+    #[cfg(feature = "network-tests")]
     #[test]
-    fn test_prepare_data() {
+    fn test_prepare_data_live() {
         let data = prepare_data();
         assert!(data.is_ok());
         let response = data.unwrap();
