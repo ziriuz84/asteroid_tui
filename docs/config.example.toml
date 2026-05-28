@@ -1,0 +1,25 @@
+# Example configuration for asteroid-tui
+# Copy to: ~/.config/asteroid_tui/config.toml
+# Values below are illustrative; replace with your observatory data.
+
+[general]
+# UI language: "en" or "it"
+lang = "en"
+
+# MPC token for What's Up (optional if MPC_AUTH_TOKEN is set in the environment)
+mpc_auth_token = ""
+
+[observatory]
+place = "La Spezia"
+latitude = 44.1
+longitude = 9.8
+altitude = 200.0
+observatory_name = "My Observatory"
+observer_name = "Observer Name"
+mpc_code = "123"
+
+# Horizon limits in degrees (objects below these altitudes are excluded)
+north_altitude = 30
+east_altitude = 45
+south_altitude = 20
+west_altitude = 70

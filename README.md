@@ -6,9 +6,12 @@ Terminal tools for minor-planet researchers and enthusiasts: observation schedul
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![crates.io](https://img.shields.io/crates/v/asteroid-tui.svg)](https://crates.io/crates/asteroid-tui)
+[![docs.rs](https://docs.rs/asteroid-tui/badge.svg)](https://docs.rs/asteroid-tui)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ziriuz84/asteroid_tui/total)
 
-**Crate:** [crates.io/crates/asteroid-tui](https://crates.io/crates/asteroid-tui) · **Repository:** [github.com/ziriuz84/asteroid_tui](https://github.com/ziriuz84/asteroid_tui)
+**Crate:** [crates.io/crates/asteroid-tui](https://crates.io/crates/asteroid-tui) · **API docs:** [docs.rs/asteroid-tui](https://docs.rs/asteroid-tui) · **Repository:** [github.com/ziriuz84/asteroid_tui](https://github.com/ziriuz84/asteroid_tui)
+
+More documentation: [docs/](docs/README.md) (architecture, config template).
 
 ## Features
 
@@ -72,6 +75,17 @@ Use the numeric menu:
 
 Configure your observatory under **Settings** before using scheduling features that depend on your location.
 
+### Typical workflow
+
+1. Run `asteroid-tui` once so the default config file is created.
+2. Open **Settings → Observatory** and set latitude, longitude, altitude, and MPC code.
+3. Set language and MPC token under **Settings → General**, or export `MPC_AUTH_TOKEN`.
+4. Use **Scheduling** for weather, sun/moon times, or the observing target list.
+
+### Screenshots
+
+Terminal screenshots can be added under [docs/images/](docs/images/README.md) and embedded here.
+
 ## Configuration
 
 Config path (Linux): `~/.config/asteroid_tui/config.toml`
@@ -91,6 +105,21 @@ export MPC_AUTH_TOKEN="your-token-here"
 
 You can also change language and observatory data from the in-app **Settings** menus.
 
+See [docs/config.example.toml](docs/config.example.toml) for a full commented example.
+
+### Obtaining an MPC token
+
+What's Up requires a Minor Planet Center account token. Set it in config (`mpc_auth_token`) or via `MPC_AUTH_TOKEN` (recommended). The environment variable takes precedence over the config file.
+
+## Troubleshooting
+
+| Problem | What to check |
+|---------|----------------|
+| Weather or sun/moon errors | Observatory latitude/longitude in **Settings → Observatory** |
+| Target list fails or is empty | Valid `MPC_AUTH_TOKEN`, date/time filters, horizon limits |
+| Wrong language | `lang` in config or **Settings → General** (`en` / `it`) |
+| Old version shown at startup | Rebuild or reinstall; version comes from the package metadata |
+
 ## Data sources
 
 | Feature | Source |
@@ -106,9 +135,10 @@ Prerequisites: Rust (stable), Cargo.
 ```bash
 cargo test
 cargo clippy -- -D warnings
+cargo doc --no-deps --open   # API documentation locally
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and [COMMIT_MESSAGES.md](COMMIT_MESSAGES.md) for commit message conventions. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/architecture.md](docs/architecture.md), [COMMIT_MESSAGES.md](COMMIT_MESSAGES.md), and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 Release history: [CHANGELOG.md](CHANGELOG.md).
 
