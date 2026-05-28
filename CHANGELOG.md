@@ -1,3 +1,18 @@
+## [1.0.1](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.1) (2026-05-28)
+
+### Code Refactoring
+
+- ci: make SonarQube analysis non-blocking ([1facdc0](https://github.com/ziriuz84/asteroid_tui/commit/1facdc0f1ec7705708f78a20e4e34544fc723280))
+- ci: run pipeline on any available agent ([d1c81ab](https://github.com/ziriuz84/asteroid_tui/commit/d1c81abc289377e0fe9ba79a8ea639db20aba66c))
+- ci: align Jenkins pipeline with server setup ([9d232de](https://github.com/ziriuz84/asteroid_tui/commit/9d232de7d7b78026747e6b63a36045aa71fbfd55))
+- ci: add Jenkins pipeline and SonarQube configuration ([8ae6b3e](https://github.com/ziriuz84/asteroid_tui/commit/8ae6b3e82837593ee7beb27e691c81b7e39a8076))
+
+### Chores
+
+- chore(release): add release automation script ([e447c0c](https://github.com/ziriuz84/asteroid_tui/commit/e447c0c96a220bb0221921718531b6e650c7ff57))
+---
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
