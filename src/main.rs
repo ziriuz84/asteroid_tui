@@ -1,3 +1,6 @@
+// Copyright (C) 2024-2026 Sirio Negri
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use asteroid_tui::tui;
 use human_panic::setup_panic;
 

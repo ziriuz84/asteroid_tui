@@ -1,3 +1,6 @@
+// Copyright (C) 2024-2026 Sirio Negri
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Crate to import all pub mods
 
 #![warn(missing_docs)]
