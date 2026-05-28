@@ -26,11 +26,9 @@ pipeline {
                     ).trim()
                     if (tag) {
                         env.RELEASE_TAG = tag
-                        writeFile file: '.release-tag', text: tag
                         echo "Release tag on HEAD: ${tag}"
                     } else {
                         env.RELEASE_TAG = ''
-                        sh 'rm -f .release-tag'
                         echo 'No release tag on HEAD; skipping publish and GitHub release stages'
                     }
                 }
@@ -115,10 +113,7 @@ pipeline {
 
         stage('Validate Publish') {
             when {
-                expression {
-                    fileExists('.release-tag') &&
-                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
-                }
+                expression { env.RELEASE_TAG ==~ /^v\d+\.\d+\.\d+$/ }
             }
             steps {
                 sh '''#!/usr/bin/env bash
@@ -129,6 +124,7 @@ pipeline {
                         echo "Cargo.toml version ($CARGO_VER) does not match tag ($TAG_VER)"
                         exit 1
                     fi
+                    git checkout -- Cargo.lock
                     cargo publish --dry-run --locked
                 '''
             }
@@ -136,10 +132,7 @@ pipeline {
 
         stage('Package Release') {
             when {
-                expression {
-                    fileExists('.release-tag') &&
-                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
-                }
+                expression { env.RELEASE_TAG ==~ /^v\d+\.\d+\.\d+$/ }
             }
             steps {
                 sh '''
@@ -160,10 +153,7 @@ pipeline {
 
         stage('GitHub Release') {
             when {
-                expression {
-                    fileExists('.release-tag') &&
-                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
-                }
+                expression { env.RELEASE_TAG ==~ /^v\d+\.\d+\.\d+$/ }
             }
             steps {
                 withCredentials([string(credentialsId: 'github-credentials', variable: 'GH_TOKEN')]) {
@@ -181,14 +171,15 @@ pipeline {
 
         stage('Publish crates.io') {
             when {
-                expression {
-                    fileExists('.release-tag') &&
-                        readFile('.release-tag').trim() ==~ /^v\d+\.\d+\.\d+$/
-                }
+                expression { env.RELEASE_TAG ==~ /^v\d+\.\d+\.\d+$/ }
             }
             steps {
                 withCredentials([string(credentialsId: 'crates-io-token', variable: 'CARGO_REGISTRY_TOKEN')]) {
-                    sh 'cargo publish --locked --verbose'
+                    sh '''#!/usr/bin/env bash
+                        set -euo pipefail
+                        git checkout -- Cargo.lock
+                        cargo publish --locked --verbose
+                    '''
                 }
             }
         }
