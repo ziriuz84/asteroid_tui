@@ -1,3 +1,11 @@
+## [1.0.6](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.6) (2026-05-28)
+
+### Code Refactoring
+
+- No commits left after filtering (merge/release/Cargo.toml version bump only). Check tags or edit this entry manually.
+---
+
+
 ## [1.0.5](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.0.5) (2026-05-28)
 
 ### Code Refactoring
