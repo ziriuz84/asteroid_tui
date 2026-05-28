@@ -1,9 +1,19 @@
 [package]
 name = "asteroid-tui"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Sirio Negri <ziriuz84@gmail.com>"]
+description = "Tools for minor planets researchers: observation scheduling and planning"
+readme = "README.md"
+repository = "https://github.com/ziriuz84/asteroid_tui"
+homepage = "https://github.com/ziriuz84/asteroid_tui"
 license = "MIT"
 edition = "2021"
+keywords = ["astronomy", "asteroids", "tui", "observation"]
+categories = ["command-line-utilities", "science"]
+
+[[bin]]
+name = "asteroid-tui"
+path = "src/main.rs"
 
 [dependencies]
 human-panic = "2.0.2"
