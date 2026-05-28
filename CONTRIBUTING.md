@@ -1,92 +1,46 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
+When contributing to this repository, please first discuss substantial changes via an [issue](https://github.com/ziriuz84/asteroid_tui/issues) or [discussion](https://github.com/ziriuz84/asteroid_tui/discussions) when possible.
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions with the project.
 
-## Pull Request Process
+## Development setup
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a
-   build.
-2. Update the README.md with details of changes to the interface, this includes new environment
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+Prerequisites: Rust (stable), Cargo.
 
-## Code of Conduct
+```bash
+git clone https://github.com/ziriuz84/asteroid_tui.git
+cd asteroid_tui
+cargo build
+cargo test
+cargo clippy -- -D warnings
+cargo doc --no-deps
+```
 
-### Our Pledge
+Optional: open local API docs with `cargo doc --no-deps --open`.
 
-In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, gender identity and expression, level of experience,
-nationality, personal appearance, race, religion, or sexual identity and
-orientation.
+## Documentation expectations
 
-### Our Standards
+When your change affects users or public APIs, update:
 
-Examples of behavior that contributes to creating a positive environment
-include:
+| Change type | Update |
+|-------------|--------|
+| Menu flow, config keys, install | [README.md](README.md) |
+| Module layout, external APIs | [docs/architecture.md](docs/architecture.md) |
+| Public Rust API | Doc comments (`///`) in source; verify with `cargo doc --no-deps` |
+| User-visible behaviour | [CHANGELOG.md](CHANGELOG.md) (or release notes via `release.sh`) |
 
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
+See [docs/README.md](docs/README.md) for the full documentation index.
 
-Examples of unacceptable behavior by participants include:
+Commit messages: follow [COMMIT_MESSAGES.md](COMMIT_MESSAGES.md) (Conventional Commits).
 
-- The use of sexualized language or imagery and unwelcome sexual attention or
-  advances
-- Trolling, insulting/derogatory comments, and personal or political attacks
-- Public or private harassment
-- Publishing others' private information, such as a physical or electronic
-  address, without explicit permission
-- Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+## Pull request process
 
-### Our Responsibilities
+1. Ensure the branch builds and tests pass (`cargo test`, `cargo clippy -- -D warnings`).
+2. Update [README.md](README.md) when changing the CLI, configuration, or install steps.
+3. Add or update rustdoc for new or changed `pub` items (`#![warn(missing_docs)]` on the crate).
+4. Describe the change clearly in the PR; link related issues when applicable.
 
-Project maintainers are responsible for clarifying the standards of acceptable
-behavior and are expected to take appropriate and fair corrective action in
-response to any instances of unacceptable behavior.
+## Releases
 
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful.
-
-### Scope
-
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
-
-### Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [ziriuz84@gmail.com]. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
-
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
-
-### Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
-available at [http://contributor-covenant.org/version/1/4][version]
-
-[homepage]: http://contributor-covenant.org
-[version]: http://contributor-covenant.org/version/1/4/
+Maintainers use [release.sh](release.sh) for version bumps, changelog entries, tags, and push. Jenkins publishes to crates.io and GitHub Releases when a version tag is on `main`.
