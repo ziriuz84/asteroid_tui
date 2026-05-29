@@ -139,7 +139,7 @@ pub mod table_indices {
 /// * `dec`: Object Dec
 /// * `magnitude`: Object magnitude
 /// * `altitude`: Object altitude
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PossibleTarget {
     /// Object designation
     pub designation: String,

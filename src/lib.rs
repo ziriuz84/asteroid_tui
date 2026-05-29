@@ -3,7 +3,7 @@
 
 //! Terminal tools for minor-planet observation scheduling and planning.
 //!
-//! The `asteroid-tui` binary provides an interactive menu for weather forecasts,
+//! The `asteroid-tui` binary provides a full-screen Ratatui interface for weather forecasts,
 //! sun and moon times, observatory settings, and MPC observing target lists.
 //! Modules in this crate implement those features and may be reused by integrations.
 //!
@@ -15,11 +15,8 @@
 /// Application and observatory configuration ([`settings::Settings`]).
 pub mod settings;
 
-/// Interactive menus for general and observatory settings.
-pub mod settings_tui;
-
-/// Scheduling menus: weather, sun/moon times, and target lists.
-pub mod scheduling_tui;
+/// Full-screen Ratatui application.
+pub mod app;
 
 /// Sunrise, sunset, and related times from observatory coordinates.
 pub mod sun_moon_times;
@@ -32,9 +29,6 @@ pub mod observing_target_list;
 
 /// Coordinate conversion and visibility helpers.
 pub mod utils;
-
-/// Main and settings menu entry points.
-pub mod tui;
 
 /// English and Italian UI strings.
 pub mod i18n;

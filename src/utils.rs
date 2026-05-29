@@ -12,7 +12,7 @@ use chrono::{DateTime, Datelike, Timelike, Utc};
 use std::f64::consts::PI;
 
 fn convert_angle(input: &str, factor_deg: f64, factor_min: f64, factor_sec: f64) -> f64 {
-    let parts: Vec<&str> = input.split(|c| c == ':' || c == ' ').collect();
+    let parts: Vec<&str> = input.split([':', ' ']).collect();
     let deg: f64 = parts[0].parse().unwrap();
     let min: f64 = parts[1].parse().unwrap();
     let sec: f64 = parts[2].parse().unwrap();

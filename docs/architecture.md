@@ -1,22 +1,21 @@
 # Architecture
 
-asteroid-tui is a terminal application built in Rust. The binary drives interactive menus; library modules fetch external data and read observatory settings from disk.
+asteroid-tui is a terminal application built in Rust. The binary runs a full-screen [Ratatui](https://ratatui.rs/) UI; library modules fetch external data and read observatory settings from disk.
 
 ## Component overview
 
 ```mermaid
 flowchart TB
-    main[main.rs] --> tui[tui]
-    tui --> settings_tui[settings_tui]
-    tui --> scheduling_tui[scheduling_tui]
-    scheduling_tui --> weather[weather]
-    scheduling_tui --> sun_moon_times[sun_moon_times]
-    scheduling_tui --> observing_target_list[observing_target_list]
-    weather --> settings[settings]
+    main[main.rs] --> app[app]
+    app --> weather[weather]
+    app --> sun_moon_times[sun_moon_times]
+    app --> observing_target_list[observing_target_list]
+    app --> settings[settings]
+    app --> i18n[i18n]
+    app --> validation[app::validation]
+    weather --> settings
     sun_moon_times --> settings
     observing_target_list --> settings
-    settings_tui --> settings
-    tui --> i18n[i18n]
     observing_target_list --> utils[utils]
 ```
 
@@ -24,15 +23,19 @@ flowchart TB
 
 | Module | Role |
 |--------|------|
-| `tui` | Main and settings menu loops |
-| `settings_tui` | In-app editors for general and observatory options |
-| `scheduling_tui` | Weather, sun/moon, and target-list flows |
+| `app` | Ratatui event loop, menus, forms, scrollable tables |
+| `app::validation` | Input validators for scheduling and observatory forms |
 | `settings` | Load/save `~/.config/asteroid_tui/config.toml` |
-| `weather` | 7timer forecast API client and table rendering |
+| `weather` | 7timer forecast API client |
 | `sun_moon_times` | sunrise-sunset.org API client |
-| `observing_target_list` | MPC What's Up HTML parsing and tables |
+| `observing_target_list` | MPC What's Up HTML parsing |
 | `utils` | Coordinate and visibility helpers |
 | `i18n` | English/Italian UI strings |
+
+## UI stack
+
+- **ratatui** + **crossterm**: alternate-screen TUI with keyboard navigation
+- Network calls (`weather::prepare_data`, etc.) run synchronously on the main thread before switching to result screens (v1; the UI may freeze briefly during fetch)
 
 ## Configuration
 
