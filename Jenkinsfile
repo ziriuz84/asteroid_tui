@@ -40,6 +40,7 @@ pipeline {
                 sh '''
                     rustup default stable
                     rustup component add clippy llvm-tools-preview
+                    rustup target add x86_64-pc-windows-gnu
                     cargo install cargo-tarpaulin --locked
                 '''
             }
@@ -65,6 +66,11 @@ pipeline {
             }
         }
 
+        stage('Build Windows') {
+            steps {
+                sh 'cargo build --release --target x86_64-pc-windows-gnu --verbose'
+            }
+        }
 
         // Informational only: SonarQube never fails the build (findings or scanner errors).
         stage('SonarQube Analysis') {
@@ -147,6 +153,15 @@ pipeline {
 
                     tar -czf "dist/asteroid-tui-${VERSION}-${ARCH}.tar.gz" -C dist "asteroid-tui-${VERSION}-${ARCH}"
                     sha256sum "dist/asteroid-tui-${VERSION}-${ARCH}.tar.gz" > "dist/asteroid-tui-${VERSION}-${ARCH}.tar.gz.sha256"
+
+                    # Windows
+                    ARCH_WIN="x86_64-pc-windows-gnu"
+                    PKG_WIN="dist/asteroid-tui-${VERSION}-${ARCH_WIN}"
+                    mkdir -p "${PKG_WIN}"
+                    cp target/${ARCH_WIN}/release/asteroid-tui.exe "${PKG_WIN}/"
+                    cp README.md LICENSE "${PKG_WIN}/"
+                    zip -r "${PKG_WIN}.zip" "${PKG_WIN}"
+                    sha256sum "${PKG_WIN}.zip" > "${PKG_WIN}.zip.sha256"
                 '''
                 archiveArtifacts artifacts: 'dist/*', fingerprint: true
             }
@@ -168,7 +183,9 @@ pipeline {
                             --title "asteroid-tui ${RELEASE_TAG}" \
                             --generate-notes \
                             dist/asteroid-tui-*.tar.gz \
-                            dist/asteroid-tui-*.tar.gz.sha256
+                            dist/asteroid-tui-*.tar.gz.sha256 \
+                            dist/asteroid-tui-*.zip \
+                            dist/asteroid-tui-*.zip.sha256
                     '''
                 }
             }
@@ -194,7 +211,8 @@ pipeline {
 
     post {
         success {
-            archiveArtifacts artifacts: 'target/release/asteroid-tui', fingerprint: true, allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/release/asteroid-tui, target/x86_64-pc-windows-gnu/release/asteroid-tui.exe',
+            fingerprint: true, allowEmptyArchive: true
         }
         always {
             cleanWs()
