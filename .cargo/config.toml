@@ -1,0 +1,3 @@
+# Cross-compile Windows GNU target (requires mingw-w64: x86_64-w64-mingw32-gcc, dlltool).
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"

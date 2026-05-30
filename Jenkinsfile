@@ -37,7 +37,32 @@ pipeline {
 
         stage('Setup Rust') {
             steps {
-                sh '''
+                sh '''#!/usr/bin/env bash
+                    set -euo pipefail
+
+                    ensure_mingw_cross_compiler() {
+                        if command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
+                            echo "MinGW cross-compiler already available"
+                            return 0
+                        fi
+                        echo "Installing MinGW-w64 for x86_64-pc-windows-gnu..."
+                        if command -v apt-get >/dev/null 2>&1; then
+                            export DEBIAN_FRONTEND=noninteractive
+                            apt-get update -qq
+                            apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
+                        elif command -v pacman >/dev/null 2>&1; then
+                            pacman -Sy --noconfirm mingw-w64-gcc
+                        elif command -v dnf >/dev/null 2>&1; then
+                            dnf install -y mingw64-gcc mingw64-gcc-c++
+                        elif command -v yum >/dev/null 2>&1; then
+                            yum install -y mingw64-gcc mingw64-gcc-c++
+                        else
+                            echo "ERROR: install mingw-w64 (x86_64-w64-mingw32-gcc) on the agent"
+                            exit 1
+                        fi
+                    }
+
+                    ensure_mingw_cross_compiler
                     rustup default stable
                     rustup component add clippy llvm-tools-preview
                     rustup target add x86_64-pc-windows-gnu
