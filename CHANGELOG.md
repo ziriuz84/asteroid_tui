@@ -1,3 +1,15 @@
+## [1.2.1](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.2.1) (2026-05-31)
+
+### Code Refactoring
+
+- ci(jenkins): install MinGW for Windows GNU cross-build ([161cc19](https://github.com/ziriuz84/asteroid_tui/commit/161cc193e4e51e3d3d18fde128f743bfb5e2bb7d))
+
+### Tests
+
+- test: strengthen offline coverage for settings and parsers ([e07622c](https://github.com/ziriuz84/asteroid_tui/commit/e07622cce244d87770701624053d2b6844822df6))
+---
+
+
 ## [1.2.0](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.2.0) (2026-05-30)
 
 ### Features
