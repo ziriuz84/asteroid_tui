@@ -1,3 +1,15 @@
+## [1.2.0](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.2.0) (2026-05-30)
+
+### Features
+
+- feat(ui): add themed Ratatui layout and visual polish ([d0a009a](https://github.com/ziriuz84/asteroid_tui/commit/d0a009a023172fa7d85798ef8c5470310dd9a59f))
+
+### Code Refactoring
+
+- ci(jenkins): add Windows cross-build and release artifacts ([6b831d7](https://github.com/ziriuz84/asteroid_tui/commit/6b831d7a939944d221d2ccf1b7dce0b463b4c009))
+---
+
+
 ## [1.1.1](https://github.com/ziriuz84/asteroid_tui/releases/tag/v1.1.1) (2026-05-29)
 
 ### Tests
