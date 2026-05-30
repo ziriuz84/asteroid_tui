@@ -82,6 +82,9 @@ pipeline {
                         sh '''#!/usr/bin/env bash
                             set -euo pipefail
 
+                            SONAR_MAX_ATTEMPTS=3
+                            SONAR_RETRY_SECONDS=30
+
                             ensure_sonar_scanner() {
                                 if command -v sonar-scanner >/dev/null 2>&1; then
                                     return 0
@@ -97,13 +100,51 @@ pipeline {
                                 export PATH="${scanner_dir}/bin:${PATH}"
                             }
 
+                            check_sonar_server() {
+                                local url="${SONAR_HOST_URL}/api/server/version"
+                                local code
+                                code=$(curl -sS -o /tmp/sonar-version.json -w "%{http_code}" \
+                                    --connect-timeout 15 --max-time 30 "${url}" || echo "000")
+                                echo "SonarQube health check: ${url} -> HTTP ${code}"
+                                if [ "${code}" = "502" ] || [ "${code}" = "503" ] || [ "${code}" = "504" ]; then
+                                    echo "WARNING: SonarQube server or reverse proxy unavailable (HTTP ${code})."
+                                    echo "         Check service on ${SONAR_HOST_URL} (restart SonarQube / nginx)."
+                                    return 1
+                                fi
+                                if [[ "${code}" =~ ^[0-9]+$ ]] && [ "${code}" -ge 200 ] && [ "${code}" -lt 300 ]; then
+                                    return 0
+                                fi
+                                echo "WARNING: Unexpected HTTP ${code} from SonarQube."
+                                return 1
+                            }
+
+                            run_sonar_scan() {
+                                sonar-scanner \
+                                    -Dsonar.host.url="${SONAR_HOST_URL}" \
+                                    -Dsonar.token="${SONAR_TOKEN}" \
+                                    -Dsonar.projectVersion="${GIT_COMMIT:-unknown}" \
+                                    -Dsonar.qualitygate.wait=false
+                            }
+
                             ensure_sonar_scanner
 
-                            sonar-scanner \
-                                -Dsonar.host.url="${SONAR_HOST_URL}" \
-                                -Dsonar.token="${SONAR_TOKEN}" \
-                                -Dsonar.projectVersion="${GIT_COMMIT:-unknown}" \
-                                -Dsonar.qualitygate.wait=false
+                            attempt=1
+                            while [ "${attempt}" -le "${SONAR_MAX_ATTEMPTS}" ]; do
+                                echo "SonarQube attempt ${attempt}/${SONAR_MAX_ATTEMPTS}..."
+                                if check_sonar_server && run_sonar_scan; then
+                                    echo "SonarQube analysis completed."
+                                    exit 0
+                                fi
+                                if [ "${attempt}" -lt "${SONAR_MAX_ATTEMPTS}" ]; then
+                                    echo "Retrying in ${SONAR_RETRY_SECONDS}s..."
+                                    sleep "${SONAR_RETRY_SECONDS}"
+                                fi
+                                attempt=$((attempt + 1))
+                            done
+
+                            echo "SonarQube skipped after ${SONAR_MAX_ATTEMPTS} attempts (server down or scanner error)."
+                            echo "Pipeline continues: stage marked UNSTABLE, not FAILURE."
+                            exit 1
                         '''
                     }
                 }
