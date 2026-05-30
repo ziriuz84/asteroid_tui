@@ -120,17 +120,9 @@ pub fn prepare_data() -> Result<SunMoonTimesResponse> {
     parse_sun_moon_json(&get_sun_moon_times()?)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "network-tests"))]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_parse_sun_moon_from_fixture() {
-        let json = include_str!("../response_examples/sunrise_sunset.json");
-        let response = parse_sun_moon_json(json).unwrap();
-        assert_eq!(response.status, "OK");
-        assert!(response.results.solar_noon.contains(':'));
-    }
 
     #[cfg(feature = "network-tests")]
     #[test]

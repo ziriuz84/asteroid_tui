@@ -402,6 +402,86 @@ impl Settings {
     pub fn set_longitude(&mut self, longitude: f32) {
         self.observatory.longitude = longitude;
     }
+
+    /// Merges observatory wizard fields into settings.
+    ///
+    /// Expects 11 strings: place, latitude, longitude, altitude, observatory name,
+    /// observer name, MPC code, north/south/east/west altitude limits.
+    /// Empty strings keep the corresponding value from `self`.
+    pub fn merge_observatory_form(&self, fields: &[String]) -> Result<Self, Box<dyn std::error::Error>> {
+        if fields.len() < 11 {
+            return Err(format!(
+                "expected 11 observatory fields, got {}",
+                fields.len()
+            )
+            .into());
+        }
+        let general = General {
+            lang: self.general.lang.clone(),
+            mpc_auth_token: default_mpc_auth_token(),
+        };
+        let observatory = Observatory {
+            place: if fields[0].is_empty() {
+                self.get_place().to_string()
+            } else {
+                fields[0].clone()
+            },
+            latitude: if fields[1].is_empty() {
+                *self.get_latitude()
+            } else {
+                fields[1].parse::<f32>()?
+            },
+            longitude: if fields[2].is_empty() {
+                *self.get_longitude()
+            } else {
+                fields[2].parse::<f32>()?
+            },
+            altitude: if fields[3].is_empty() {
+                *self.get_altitude()
+            } else {
+                fields[3].parse::<f32>()?
+            },
+            observatory_name: if fields[4].is_empty() {
+                self.get_observatory_name().to_string()
+            } else {
+                fields[4].clone()
+            },
+            observer_name: if fields[5].is_empty() {
+                self.get_observer_name().to_string()
+            } else {
+                fields[5].clone()
+            },
+            mpc_code: if fields[6].is_empty() {
+                self.get_mpc_code().to_string()
+            } else {
+                fields[6].clone()
+            },
+            north_altitude: if fields[7].is_empty() {
+                *self.get_north_altitude()
+            } else {
+                fields[7].parse::<i32>()?
+            },
+            south_altitude: if fields[8].is_empty() {
+                *self.get_south_altitude()
+            } else {
+                fields[8].parse::<i32>()?
+            },
+            east_altitude: if fields[9].is_empty() {
+                *self.get_east_altitude()
+            } else {
+                fields[9].parse::<i32>()?
+            },
+            west_altitude: if fields[10].is_empty() {
+                *self.get_west_altitude()
+            } else {
+                fields[10].parse::<i32>()?
+            },
+        };
+        Ok(Settings {
+            general,
+            observatory,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -429,5 +509,36 @@ mod test {
         let contents = fs::read_to_string(file.path()).unwrap();
         let updated = Settings::from_toml_str(&contents).unwrap();
         assert_eq!(updated.get_lang(), "it");
+    }
+
+    fn base_settings() -> Settings {
+        Settings::from_toml_str(include_str!("../docs/config.example.toml")).unwrap()
+    }
+
+    #[test]
+    fn test_merge_observatory_form_keeps_empty_fields() {
+        let base = base_settings();
+        let fields = vec!["".to_string(); 11];
+        let merged = base.merge_observatory_form(&fields).unwrap();
+        assert_eq!(merged.get_place(), base.get_place());
+        assert_eq!(merged.get_mpc_code(), base.get_mpc_code());
+    }
+
+    #[test]
+    fn test_merge_observatory_form_overrides_place_and_lat() {
+        let base = base_settings();
+        let mut fields = vec!["".to_string(); 11];
+        fields[0] = "New Site".to_string();
+        fields[1] = "45.5".to_string();
+        let merged = base.merge_observatory_form(&fields).unwrap();
+        assert_eq!(merged.get_place(), "New Site");
+        assert!((*merged.get_latitude() - 45.5).abs() < f32::EPSILON);
+        assert_eq!(merged.get_longitude(), base.get_longitude());
+    }
+
+    #[test]
+    fn test_merge_observatory_form_rejects_wrong_field_count() {
+        let base = base_settings();
+        assert!(base.merge_observatory_form(&["only".to_string()]).is_err());
     }
 }

@@ -10,8 +10,6 @@ mod validation;
 use std::io::{stdout, Stdout};
 
 use anyhow::{Context, Result};
-use chrono::format::StrftimeItems;
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -22,9 +20,8 @@ use ratatui::Terminal;
 
 use crate::i18n::{self, keys};
 use crate::observing_target_list::{parse_whats_up_response, WhatsUpParams};
-use crate::settings::{default_mpc_auth_token, General, Observatory, Settings};
+use crate::settings::Settings;
 use crate::sun_moon_times::SunMoonTimesResponse;
-use crate::weather::ForecastResponse;
 
 const OBJECT_TYPES: [&str; 3] = ["Asteroid", "NEO", "Comet"];
 const LANGUAGES: [&str; 2] = ["en", "it"];
@@ -311,80 +308,15 @@ fn handle_observatory_field(
 }
 
 fn save_observatory(app: &mut App, values: &[String]) -> Result<()> {
-    let new_settings = settings_from_observatory_values(&app.settings, values)?;
+    let new_settings = app
+        .settings
+        .merge_observatory_form(values)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
     app.settings
         .set_settings(new_settings)
         .map_err(|e| anyhow::anyhow!("{e}"))?;
     app.reload_settings()?;
     Ok(())
-}
-
-fn settings_from_observatory_values(actual: &Settings, value: &[String]) -> Result<Settings> {
-    let general = General {
-        lang: actual.general.lang.clone(),
-        mpc_auth_token: default_mpc_auth_token(),
-    };
-    let observatory = Observatory {
-        place: if value[0].is_empty() {
-            actual.get_place().to_string()
-        } else {
-            value[0].clone()
-        },
-        latitude: if value[1].is_empty() {
-            *actual.get_latitude()
-        } else {
-            value[1].parse::<f32>()?
-        },
-        longitude: if value[2].is_empty() {
-            *actual.get_longitude()
-        } else {
-            value[2].parse::<f32>()?
-        },
-        altitude: if value[3].is_empty() {
-            *actual.get_altitude()
-        } else {
-            value[3].parse::<f32>()?
-        },
-        observatory_name: if value[4].is_empty() {
-            actual.get_observatory_name().to_string()
-        } else {
-            value[4].clone()
-        },
-        observer_name: if value[5].is_empty() {
-            actual.get_observer_name().to_string()
-        } else {
-            value[5].clone()
-        },
-        mpc_code: if value[6].is_empty() {
-            actual.get_mpc_code().to_string()
-        } else {
-            value[6].clone()
-        },
-        north_altitude: if value[7].is_empty() {
-            *actual.get_north_altitude()
-        } else {
-            value[7].parse::<i32>()?
-        },
-        south_altitude: if value[8].is_empty() {
-            *actual.get_south_altitude()
-        } else {
-            value[8].parse::<i32>()?
-        },
-        east_altitude: if value[9].is_empty() {
-            *actual.get_east_altitude()
-        } else {
-            value[9].parse::<i32>()?
-        },
-        west_altitude: if value[10].is_empty() {
-            *actual.get_west_altitude()
-        } else {
-            value[10].parse::<i32>()?
-        },
-    };
-    Ok(Settings {
-        general,
-        observatory,
-    })
 }
 
 fn handle_scheduling_menu(app: &mut App, key: KeyEvent) -> Result<()> {
@@ -410,7 +342,7 @@ fn load_weather(app: &mut App) -> Result<()> {
         e
     })?;
     app.clear_loading();
-    let (headers, rows) = build_weather_rows(&data);
+    let (headers, rows) = crate::weather::forecast_table_rows(&data);
     app.screen = Screen::WeatherTable {
         headers,
         rows,
@@ -576,21 +508,7 @@ fn validate_target_step(step: TargetStep, input: &str, draft: &TargetDraft) -> b
     match step {
         TargetStep::Year => validation::validate_year(input),
         TargetStep::Month => validation::validate_month(input),
-        TargetStep::Day => {
-            validation::validate_day(input)
-                && draft
-                    .year
-                    .parse::<u32>()
-                    .ok()
-                    .zip(draft.month.parse::<u32>().ok())
-                    .map(|(y, m)| {
-                        input
-                            .parse::<u32>()
-                            .map(|d| validation::validate_date(y, m, d))
-                            .unwrap_or(false)
-                    })
-                    .unwrap_or(false)
-        }
+        TargetStep::Day => validation::validate_wizard_day(&draft.year, &draft.month, input),
         TargetStep::Hour => validation::validate_hour(input),
         TargetStep::Minute => validation::validate_minute(input),
         TargetStep::Duration
@@ -739,56 +657,4 @@ fn invalid_option_hint(options: &[&str]) -> String {
         i18n::t(keys::INVALID_OPTION),
         options.join(", ")
     )
-}
-
-fn parse_input(input: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
-    let naive_dt = NaiveDateTime::parse_from_str(input, "%Y%m%d%H%M")?;
-    Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc))
-}
-
-fn add_hours(dt: DateTime<Utc>, hours: u32) -> DateTime<Utc> {
-    dt + Duration::hours(hours.into())
-}
-
-fn format_output(dt: DateTime<Utc>) -> String {
-    let items = StrftimeItems::new("%a %H");
-    dt.format_with_items(items).to_string()
-}
-
-fn build_weather_rows(data: &ForecastResponse) -> (Vec<String>, Vec<Vec<String>>) {
-    let headers = vec![
-        "Time".into(),
-        "Clouds".into(),
-        "Seeing".into(),
-        "Transp".into(),
-        "Instab".into(),
-        "RH2m".into(),
-        "Wind".into(),
-        "T".into(),
-        "Prec".into(),
-    ];
-    let timezero = format!("{}00", data.init);
-    let mut rows = Vec::new();
-    for item in &data.dataseries {
-        let time = match parse_input(timezero.as_str()) {
-            Ok(result) => format_output(add_hours(result, item.timepoint as u32)),
-            Err(e) => format!("parse err: {e}"),
-        };
-        rows.push(vec![
-            time,
-            item.cloud_cover.to_str().to_string(),
-            item.seeing.to_str().to_string(),
-            item.transparency.to_str().to_string(),
-            item.lifted_index.to_str().to_string(),
-            item.rh2m.to_str().to_string(),
-            format!(
-                "{} at {}",
-                item.wind10m.direction,
-                item.wind10m.speed.to_str()
-            ),
-            item.temp2m.to_string(),
-            item.prec_type.clone(),
-        ]);
-    }
-    (headers, rows)
 }

@@ -1,5 +1,7 @@
 use crate::settings::Settings;
 use anyhow::{Context, Result};
+use chrono::format::StrftimeItems;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -422,16 +424,77 @@ pub fn prepare_data() -> Result<ForecastResponse> {
     parse_forecast_json(&get_forecast()?)
 }
 
+fn parse_init_time(input: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    let naive_dt = NaiveDateTime::parse_from_str(input, "%Y%m%d%H%M")?;
+    Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc))
+}
+
+fn format_forecast_hour(dt: DateTime<Utc>) -> String {
+    let items = StrftimeItems::new("%a %H");
+    dt.format_with_items(items).to_string()
+}
+
+/// Builds header labels and table rows for the weather forecast TUI table.
+pub fn forecast_table_rows(data: &ForecastResponse) -> (Vec<String>, Vec<Vec<String>>) {
+    let headers = vec![
+        "Time".into(),
+        "Clouds".into(),
+        "Seeing".into(),
+        "Transp".into(),
+        "Instab".into(),
+        "RH2m".into(),
+        "Wind".into(),
+        "T".into(),
+        "Prec".into(),
+    ];
+    let timezero = format!("{}00", data.init);
+    let mut rows = Vec::new();
+    for item in &data.dataseries {
+        let time = match parse_init_time(timezero.as_str()) {
+            Ok(result) => {
+                let shifted = result + Duration::hours(item.timepoint as i64);
+                format_forecast_hour(shifted)
+            }
+            Err(e) => format!("parse err: {e}"),
+        };
+        rows.push(vec![
+            time,
+            item.cloud_cover.to_str().to_string(),
+            item.seeing.to_str().to_string(),
+            item.transparency.to_str().to_string(),
+            item.lifted_index.to_str().to_string(),
+            item.rh2m.to_str().to_string(),
+            format!(
+                "{} at {}",
+                item.wind10m.direction,
+                item.wind10m.speed.to_str()
+            ),
+            item.temp2m.to_string(),
+            item.prec_type.clone(),
+        ]);
+    }
+    (headers, rows)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
-    fn test_parse_forecast_from_fixture() {
+    fn test_forecast_table_rows_from_fixture() {
         let json = include_str!("../response_examples/7timer.json");
         let forecast = parse_forecast_json(json).unwrap();
-        assert_eq!(forecast.product, "astro");
-        assert!(!forecast.dataseries.is_empty());
+        let (headers, rows) = forecast_table_rows(&forecast);
+        assert_eq!(headers.len(), 9);
+        assert!(!rows.is_empty());
+        assert_eq!(rows[0].len(), 9);
+        assert!(!rows[0][0].starts_with("parse err"));
+    }
+
+    #[test]
+    fn test_cloud_cover_to_str() {
+        assert_eq!(CloudCover::Six.to_str(), "0%-6%");
+        assert_eq!(CloudCover::OneHundred.to_str(), "94%-100%");
     }
 
     #[cfg(feature = "network-tests")]

@@ -454,6 +454,26 @@ mod test {
     }
 
     #[test]
+    fn test_extract_authenticity_token_empty_html() {
+        assert!(extract_authenticity_token_from_html("").is_empty());
+        assert!(extract_authenticity_token_from_html("<html></html>").is_empty());
+    }
+
+    #[test]
+    fn test_extract_authenticity_token_regex_fallback() {
+        let html = r#"<form><input name="authenticity_token" value="regex-token-abc"/></form>"#;
+        let token = extract_authenticity_token_from_html(html);
+        assert_eq!(token, "regex-token-abc");
+    }
+
+    #[test]
+    fn test_extract_authenticity_token_meta_csrf() {
+        let html = r#"<meta name="csrf-token" content="meta-csrf-xyz"/>"#;
+        let token = extract_authenticity_token_from_html(html);
+        assert_eq!(token, "meta-csrf-xyz");
+    }
+
+    #[test]
     fn test_parse_whats_up_html_from_fixture() {
         let html = include_str!("../response_examples/whatsup.html");
         let params = fixture_whats_up_params();

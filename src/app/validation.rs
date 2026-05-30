@@ -60,6 +60,17 @@ pub fn validate_longitude(lon: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// Validates day input against year and month already collected in the wizard.
+pub fn validate_wizard_day(year: &str, month: &str, day: &str) -> bool {
+    if !validate_day(day) {
+        return false;
+    }
+    match (year.parse::<u32>(), month.parse::<u32>(), day.parse::<u32>()) {
+        (Ok(y), Ok(m), Ok(d)) => validate_date(y, m, d),
+        _ => false,
+    }
+}
+
 /// Maps object type string to MPC code.
 pub fn map_object_type_to_code(object_type: &str) -> &str {
     match object_type {
@@ -139,6 +150,13 @@ mod tests {
         assert!(!validate_minute("60"));
         assert!(!validate_minute("abc"));
         assert!(!validate_minute(""));
+    }
+
+    #[test]
+    fn test_validate_wizard_day() {
+        assert!(validate_wizard_day("2024", "2", "29"));
+        assert!(!validate_wizard_day("2024", "2", "30"));
+        assert!(!validate_wizard_day("2024", "13", "1"));
     }
 
     #[test]
