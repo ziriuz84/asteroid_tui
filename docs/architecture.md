@@ -23,7 +23,9 @@ flowchart TB
 
 | Module | Role |
 |--------|------|
-| `app` | Ratatui event loop, menus, forms, scrollable tables |
+| `app` | Ratatui event loop, keyboard handling, network-backed screen transitions |
+| `app::render` | Themed drawing: header/body/footer shell, menus, tables, wizards |
+| `app::theme` | Night-sky palette, rounded blocks, menu/table styles |
 | `app::validation` | Input validators for scheduling and observatory forms |
 | `settings` | Load/save `~/.config/asteroid_tui/config.toml` |
 | `weather` | 7timer forecast API client |
@@ -34,7 +36,7 @@ flowchart TB
 
 ## UI stack
 
-- **ratatui** + **crossterm**: alternate-screen TUI with keyboard navigation
+- **ratatui** + **crossterm**: alternate-screen TUI with keyboard navigation, cyan/yellow theme, centered panels
 - Network calls (`weather::prepare_data`, etc.) run synchronously on the main thread before switching to result screens (v1; the UI may freeze briefly during fetch)
 
 ## Configuration

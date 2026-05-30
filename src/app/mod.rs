@@ -3,6 +3,8 @@
 
 //! Full-screen Ratatui application (menus, forms, tables).
 
+mod render;
+mod theme;
 mod validation;
 
 use std::io::{stdout, Stdout};
@@ -16,19 +18,14 @@ use crossterm::terminal::{
 };
 use crossterm::{execute, terminal::Clear, terminal::ClearType};
 use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::style::{Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph, Row, Table, Wrap};
 use ratatui::Terminal;
 
 use crate::i18n::{self, keys};
-use crate::observing_target_list::{parse_whats_up_response, PossibleTarget, WhatsUpParams};
+use crate::observing_target_list::{parse_whats_up_response, WhatsUpParams};
 use crate::settings::{default_mpc_auth_token, General, Observatory, Settings};
 use crate::sun_moon_times::SunMoonTimesResponse;
 use crate::weather::ForecastResponse;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 const OBJECT_TYPES: [&str; 3] = ["Asteroid", "NEO", "Comet"];
 const LANGUAGES: [&str; 2] = ["en", "it"];
 const OBSERVATORY_FIELDS: usize = 11;
@@ -74,7 +71,11 @@ enum Screen {
     LanguageSelect { selected: usize },
     ObservatoryField { index: usize, values: Vec<String> },
     SchedulingMenu,
-    WeatherTable { headers: Vec<String>, rows: Vec<Vec<String>>, scroll: usize },
+    WeatherTable {
+        headers: Vec<String>,
+        rows: Vec<Vec<String>>,
+        scroll: usize,
+    },
     SunMoonView { lines: Vec<String> },
     TargetWizard {
         step: TargetStep,
@@ -82,7 +83,7 @@ enum Screen {
         input: String,
     },
     TargetTable {
-        rows: Vec<PossibleTarget>,
+        rows: Vec<crate::observing_target_list::PossibleTarget>,
         scroll: usize,
     },
     Status { message: String, back: Box<Screen> },
@@ -94,6 +95,8 @@ struct App {
     should_quit: bool,
     status_line: String,
     settings: Settings,
+    loading: bool,
+    loading_tick: u8,
 }
 
 impl App {
@@ -104,12 +107,24 @@ impl App {
             should_quit: false,
             status_line: i18n::t(keys::SELECT_OPTION),
             settings,
+            loading: false,
+            loading_tick: 0,
         })
     }
 
     fn reload_settings(&mut self) -> Result<()> {
         self.settings = Settings::new().context("Failed to load settings")?;
         Ok(())
+    }
+
+    fn set_loading(&mut self, message: &str) {
+        self.loading = true;
+        self.loading_tick = 0;
+        self.status_line = message.to_string();
+    }
+
+    fn clear_loading(&mut self) {
+        self.loading = false;
     }
 }
 
@@ -130,7 +145,10 @@ pub fn run() -> Result<()> {
 
 fn run_loop(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> Result<()> {
     loop {
-        terminal.draw(|f| render(f, app))?;
+        if app.loading {
+            app.loading_tick = app.loading_tick.wrapping_add(1);
+        }
+        terminal.draw(|f| render::render(f, app))?;
         if app.should_quit {
             break;
         }
@@ -141,307 +159,6 @@ fn run_loop(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) ->
         }
     }
     Ok(())
-}
-
-fn render(frame: &mut ratatui::Frame, app: &App) {
-    let area = frame.area();
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(3), Constraint::Length(1)])
-        .split(area);
-
-    match &app.screen {
-        Screen::MainMenu => draw_main_menu(frame, chunks[0], app),
-        Screen::SettingsMenu => draw_settings_menu(frame, chunks[0], app),
-        Screen::GeneralSettings => draw_general_settings(frame, chunks[0], app),
-        Screen::LanguageSelect { selected } => {
-            draw_language_select(frame, chunks[0], *selected)
-        }
-        Screen::ObservatoryField { index, values } => {
-            draw_observatory_field(frame, chunks[0], app, *index, values)
-        }
-        Screen::SchedulingMenu => draw_scheduling_menu(frame, chunks[0], app),
-        Screen::WeatherTable { headers, rows, scroll } => {
-            draw_weather_table(frame, chunks[0], headers, rows, *scroll)
-        }
-        Screen::SunMoonView { lines } => draw_text_block(frame, chunks[0], "Sun / Moon Times", lines),
-        Screen::TargetWizard { step, draft, input } => {
-            draw_target_wizard(frame, chunks[0], *step, draft.as_ref(), input)
-        }
-        Screen::TargetTable { rows, scroll } => draw_target_table(frame, chunks[0], rows, *scroll),
-        Screen::Status { message, .. } => draw_status(frame, chunks[0], message),
-    }
-
-    let footer = Paragraph::new(Line::from(vec![
-        Span::raw(&app.status_line),
-        Span::raw("  |  "),
-        Span::raw("9/Esc: back  q: quit  0: menu option  Enter: confirm  j/k: navigate"),
-    ]));
-    frame.render_widget(footer, chunks[1]);
-}
-
-fn draw_main_menu(frame: &mut ratatui::Frame, area: Rect, app: &App) {
-    let text = format!(
-        "asteroid-tui v{VERSION}\n\n{}\n\n1. {}\n2. {}\n0. {}",
-        i18n::t(keys::MAIN_MENU_TITLE),
-        i18n::t(keys::SETTINGS),
-        i18n::t(keys::SCHEDULING),
-        i18n::t(keys::QUIT),
-    );
-    let block = Block::default().title(" asteroid-tui ").borders(Borders::ALL);
-    let p = Paragraph::new(text).block(block).wrap(Wrap { trim: false });
-    frame.render_widget(p, area);
-    let _ = app;
-}
-
-fn draw_settings_menu(frame: &mut ratatui::Frame, area: Rect, app: &App) {
-    let text = format!(
-        "{}\n\n1. {}\n2. {}\n9. {}\n0. {}",
-        i18n::t(keys::SETTINGS_MENU_TITLE),
-        i18n::t(keys::GENERAL),
-        i18n::t(keys::OBSERVATORY),
-        i18n::t(keys::BACK),
-        i18n::t(keys::QUIT),
-    );
-    let block = Block::default().title(" Settings ").borders(Borders::ALL);
-    frame.render_widget(Paragraph::new(text).block(block), area);
-    let _ = app;
-}
-
-fn draw_general_settings(frame: &mut ratatui::Frame, area: Rect, app: &App) {
-    let text = format!(
-        "{} (lang: {})\n\n1. Language\n9. {}\n0. {}",
-        i18n::t(keys::GENERAL),
-        app.settings.get_lang(),
-        i18n::t(keys::BACK),
-        i18n::t(keys::QUIT),
-    );
-    let block = Block::default().title(" General ").borders(Borders::ALL);
-    frame.render_widget(Paragraph::new(text).block(block), area);
-}
-
-fn draw_language_select(frame: &mut ratatui::Frame, area: Rect, selected: usize) {
-    let items: Vec<ListItem> = LANGUAGES
-        .iter()
-        .enumerate()
-        .map(|(i, lang)| {
-            let style = if i == selected {
-                Style::default().add_modifier(Modifier::REVERSED)
-            } else {
-                Style::default()
-            };
-            ListItem::new(*lang).style(style)
-        })
-        .collect();
-    let block = Block::default()
-        .title(" Language / Lingua ")
-        .borders(Borders::ALL);
-    frame.render_widget(List::new(items).block(block), area);
-}
-
-fn observatory_field_label(index: usize, settings: &Settings) -> String {
-    match index {
-        0 => format!("Place Name ({}): ", settings.get_place()),
-        1 => format!("Latitude ({}): ", settings.get_latitude()),
-        2 => format!("Longitude ({}): ", settings.get_longitude()),
-        3 => format!("Altitude ({}): ", settings.get_altitude()),
-        4 => format!("Observatory Name ({}): ", settings.get_observatory_name()),
-        5 => format!("Observer Name ({}): ", settings.get_observer_name()),
-        6 => format!("MPC Code ({}): ", settings.get_mpc_code()),
-        7 => format!(
-            "North Altitude ({}): ",
-            settings.get_north_altitude()
-        ),
-        8 => format!(
-            "South Altitude ({}): ",
-            settings.get_south_altitude()
-        ),
-        9 => format!("East Altitude ({}): ", settings.get_east_altitude()),
-        10 => format!("West Altitude ({}): ", settings.get_west_altitude()),
-        _ => String::new(),
-    }
-}
-
-fn draw_observatory_field(
-    frame: &mut ratatui::Frame,
-    area: Rect,
-    app: &App,
-    index: usize,
-    values: &[String],
-) {
-    let label = observatory_field_label(index, &app.settings);
-    let current = values.get(index).map(String::as_str).unwrap_or("");
-    let progress = format!("Field {} of {}", index + 1, OBSERVATORY_FIELDS);
-    let text = format!(
-        "Observatory Settings\n{progress}\n\n{label}\n[{current}]\n\nEnter: next/save  Esc: cancel",
-    );
-    let block = Block::default().title(" Observatory ").borders(Borders::ALL);
-    frame.render_widget(Paragraph::new(text).block(block), area);
-}
-
-fn draw_scheduling_menu(frame: &mut ratatui::Frame, area: Rect, _app: &App) {
-    let text = format!(
-        "{}\n\n1. {}\n2. {}\n3. {}\n9. {}\n0. {}",
-        i18n::t(keys::SCHEDULING_MENU_TITLE),
-        i18n::t(keys::WEATHER_FORECAST),
-        i18n::t(keys::SUN_MOON_TIMES),
-        i18n::t(keys::OBSERVING_TARGET_LIST),
-        i18n::t(keys::BACK),
-        i18n::t(keys::QUIT),
-    );
-    let block = Block::default().title(" Scheduling ").borders(Borders::ALL);
-    frame.render_widget(Paragraph::new(text).block(block), area);
-}
-
-fn draw_weather_table(
-    frame: &mut ratatui::Frame,
-    area: Rect,
-    headers: &[String],
-    rows: &[Vec<String>],
-    scroll: usize,
-) {
-    let header = Row::new(headers.iter().map(|h| h.as_str()).collect::<Vec<_>>())
-        .style(Style::default().add_modifier(Modifier::BOLD));
-    let table_rows: Vec<Row> = rows
-        .iter()
-        .skip(scroll)
-        .take(area.height.saturating_sub(4) as usize)
-        .map(|r| Row::new(r.iter().map(|c| c.as_str()).collect::<Vec<_>>()))
-        .collect();
-    let block = Block::default()
-        .title(" Weather Forecast ")
-        .borders(Borders::ALL);
-    let table = Table::new(table_rows, headers.iter().map(|_| Constraint::Length(10)))
-        .header(header)
-        .block(block);
-    frame.render_widget(table, area);
-}
-
-fn draw_target_table(
-    frame: &mut ratatui::Frame,
-    area: Rect,
-    rows: &[PossibleTarget],
-    scroll: usize,
-) {
-    let headers = ["Designation", "Mag", "RA", "DEC", "Alt"];
-    let header = Row::new(headers).style(Style::default().add_modifier(Modifier::BOLD));
-    let table_rows: Vec<Row> = rows
-        .iter()
-        .skip(scroll)
-        .take(area.height.saturating_sub(4) as usize)
-        .map(|t| {
-            Row::new(vec![
-                t.designation.clone(),
-                t.magnitude.to_string(),
-                t.ra.clone(),
-                t.dec.clone(),
-                t.altitude.to_string(),
-            ])
-        })
-        .collect();
-    let block = Block::default()
-        .title(format!(" Targets ({}) ", rows.len()))
-        .borders(Borders::ALL);
-    let table = Table::new(
-        table_rows,
-        [
-            Constraint::Length(14),
-            Constraint::Length(6),
-            Constraint::Length(12),
-            Constraint::Length(12),
-            Constraint::Length(6),
-        ],
-    )
-    .header(header)
-    .block(block);
-    frame.render_widget(table, area);
-}
-
-fn draw_text_block(frame: &mut ratatui::Frame, area: Rect, title: &str, lines: &[String]) {
-    let text = lines.join("\n");
-    let block = Block::default().title(format!(" {title} ")).borders(Borders::ALL);
-    frame.render_widget(
-        Paragraph::new(text).block(block).wrap(Wrap { trim: false }),
-        area,
-    );
-}
-
-fn target_step_title(step: TargetStep) -> &'static str {
-    match step {
-        TargetStep::Year => "Year (YYYY):",
-        TargetStep::Month => "Month (MM):",
-        TargetStep::Day => "Day (DD):",
-        TargetStep::Hour => "Hour (HH, 0-23):",
-        TargetStep::Minute => "Minute (MM, 0-59):",
-        TargetStep::Duration => "Duration in hours:",
-        TargetStep::MaxObjects => "Maximum number of objects:",
-        TargetStep::MinAlt => "Minimum Altitude (deg):",
-        TargetStep::SolarElong => "Maximum Solar elongation (deg):",
-        TargetStep::LunarElong => "Maximum Lunar elongation (deg):",
-        TargetStep::ObjectType => "Select object type (j/k, Enter):",
-    }
-}
-
-fn draw_target_wizard(
-    frame: &mut ratatui::Frame,
-    area: Rect,
-    step: TargetStep,
-    draft: &TargetDraft,
-    input: &str,
-) {
-    if step == TargetStep::ObjectType {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(3),
-                Constraint::Length(4),
-            ])
-            .split(area);
-        let hint = Paragraph::new(
-            "Select object type / Seleziona tipo oggetto\n\
-             Keys: ↑↓ or j/k move | 1 Asteroid | 2 NEO | 3 Comet | Enter confirm",
-        );
-        frame.render_widget(hint, chunks[0]);
-        let items: Vec<ListItem> = OBJECT_TYPES
-            .iter()
-            .enumerate()
-            .map(|(i, t)| {
-                let prefix = if i == draft.object_type_index { "► " } else { "  " };
-                let style = if i == draft.object_type_index {
-                    Style::default().add_modifier(Modifier::REVERSED)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(format!("{prefix}{} ({})", t, i + 1)).style(style)
-            })
-            .collect();
-        let block = Block::default()
-            .title(" Object type ")
-            .borders(Borders::ALL);
-        frame.render_widget(List::new(items).block(block), chunks[1]);
-        let footer = Paragraph::new("Press Enter to fetch the target list from MPC");
-        frame.render_widget(footer, chunks[2]);
-        return;
-    }
-    let text = format!(
-        "Observing Target List\n\n{}\n\n[{input}]",
-        target_step_title(step),
-    );
-    let block = Block::default()
-        .title(" Observing Target List ")
-        .borders(Borders::ALL);
-    frame.render_widget(Paragraph::new(text).block(block), area);
-}
-
-fn draw_status(frame: &mut ratatui::Frame, area: Rect, message: &str) {
-    let block = Block::default().title(" Message ").borders(Borders::ALL);
-    frame.render_widget(
-        Paragraph::new(message.to_string())
-            .block(block)
-            .wrap(Wrap { trim: false }),
-        area,
-    );
 }
 
 fn handle_key(app: &mut App, key: KeyEvent) -> Result<()> {
@@ -464,9 +181,7 @@ fn handle_key(app: &mut App, key: KeyEvent) -> Result<()> {
         Screen::TargetWizard { step, draft, input } => {
             handle_target_wizard(app, key, *step, draft.as_ref().clone(), input.clone())
         }
-        Screen::TargetTable { scroll, .. } => {
-            handle_scrollable_back(app, key, *scroll, false)
-        }
+        Screen::TargetTable { scroll, .. } => handle_scrollable_back(app, key, *scroll, false),
         Screen::Status { back, .. } => handle_status(app, key, back.as_ref().clone()),
     }
 }
@@ -548,8 +263,7 @@ fn start_observatory_wizard(app: &mut App) -> Result<()> {
         index: 0,
         values: vec![String::new(); OBSERVATORY_FIELDS],
     };
-    app.status_line =
-        "Type value, Enter next (empty=keep) | 9/Esc back | q quit".to_string();
+    app.status_line = "Type value, Enter next (empty=keep) | 9/Esc back | q quit".to_string();
     Ok(())
 }
 
@@ -605,10 +319,7 @@ fn save_observatory(app: &mut App, values: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn settings_from_observatory_values(
-    actual: &Settings,
-    value: &[String],
-) -> Result<Settings> {
+fn settings_from_observatory_values(actual: &Settings, value: &[String]) -> Result<Settings> {
     let general = General {
         lang: actual.general.lang.clone(),
         mpc_auth_token: default_mpc_auth_token(),
@@ -689,14 +400,16 @@ fn handle_scheduling_menu(app: &mut App, key: KeyEvent) -> Result<()> {
 }
 
 fn load_weather(app: &mut App) -> Result<()> {
-    app.status_line = "Fetching weather...".to_string();
+    app.set_loading("Fetching weather...");
     let data = crate::weather::prepare_data().map_err(|e| {
+        app.clear_loading();
         app.screen = Screen::Status {
             message: format!("Weather error: {e}"),
             back: Box::new(Screen::SchedulingMenu),
         };
         e
     })?;
+    app.clear_loading();
     let (headers, rows) = build_weather_rows(&data);
     app.screen = Screen::WeatherTable {
         headers,
@@ -708,14 +421,16 @@ fn load_weather(app: &mut App) -> Result<()> {
 }
 
 fn load_sun_moon(app: &mut App) -> Result<()> {
-    app.status_line = "Fetching sun/moon times...".to_string();
+    app.set_loading("Fetching sun/moon times...");
     let data: SunMoonTimesResponse = crate::sun_moon_times::prepare_data().map_err(|e| {
+        app.clear_loading();
         app.screen = Screen::Status {
             message: format!("Sun/moon error: {e}"),
             back: Box::new(Screen::SchedulingMenu),
         };
         e
     })?;
+    app.clear_loading();
     let r = &data.results;
     let lines = vec![
         format!("All times are {}", data.tzid),
@@ -744,8 +459,7 @@ fn start_target_wizard(app: &mut App) {
         draft: Box::new(TargetDraft::default()),
         input: String::new(),
     };
-    app.status_line =
-        "Type value, Enter confirm | 9/Esc back | q quit (0 is a digit)".to_string();
+    app.status_line = "Type value, Enter confirm | 9/Esc back | q quit (0 is a digit)".to_string();
 }
 
 fn handle_target_wizard(
@@ -786,7 +500,6 @@ fn handle_target_wizard(
             }
             KeyCode::Enter => {
                 fetch_target_list(app, &draft)?;
-                // fetch_target_list sets app.screen (table, status, or error); do not overwrite
                 return Ok(());
             }
             KeyCode::Esc | KeyCode::Char('9') => {
@@ -865,7 +578,11 @@ fn validate_target_step(step: TargetStep, input: &str, draft: &TargetDraft) -> b
         TargetStep::Month => validation::validate_month(input),
         TargetStep::Day => {
             validation::validate_day(input)
-                && draft.year.parse::<u32>().ok().zip(draft.month.parse::<u32>().ok())
+                && draft
+                    .year
+                    .parse::<u32>()
+                    .ok()
+                    .zip(draft.month.parse::<u32>().ok())
                     .map(|(y, m)| {
                         input
                             .parse::<u32>()
@@ -943,19 +660,22 @@ fn fetch_target_list(app: &mut App, draft: &TargetDraft) -> Result<()> {
         lunar_elong: draft.lunar_elong.clone(),
         object_type: validation::map_object_type_to_code(object_type).to_string(),
     };
-    app.status_line = "Fetching targets...".to_string();
+    app.set_loading("Fetching targets from MPC...");
     match parse_whats_up_response(&params) {
         Ok(data) if data.is_empty() => {
+            app.clear_loading();
             app.screen = Screen::Status {
                 message: "No visible objects / Nessun oggetto visibile".to_string(),
                 back: Box::new(Screen::SchedulingMenu),
             };
         }
         Ok(data) => {
+            app.clear_loading();
             app.screen = Screen::TargetTable { rows: data, scroll: 0 };
             app.status_line = "j/k: scroll  9/Esc: back".to_string();
         }
         Err(e) => {
+            app.clear_loading();
             app.screen = Screen::Status {
                 message: format!("Target list error: {e}"),
                 back: Box::new(Screen::SchedulingMenu),
